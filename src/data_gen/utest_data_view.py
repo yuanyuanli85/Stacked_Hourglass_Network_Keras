@@ -35,13 +35,6 @@ def draw_joints(cvmat, joints):
         if _visibility == 1.0:
            cv2.circle(cvmat, center=(int(_x), int(_y)), color=(1.0, 1.0, 0), radius=7, thickness=2)
 
-def transform_kp(joints, center, scale, res, rot):
-    newjoints = np.copy(joints)
-    for i in range(joints.shape[0]):
-        if joints[i, 0] > 0 and joints[i, 1] > 0:
-            _x = data_process.transform(newjoints[i, 0:2]+1, center=center, scale=scale, res=res, invert=0, rot=rot)
-            newjoints[i, 0:2] = _x
-    return newjoints
 
 def generate_gt_map(joints, sigma, outres):
     npart = joints.shape[0]
@@ -61,19 +54,18 @@ def view_crop_image(anno):
     #draw_joints(imgdata, anno['joint_self'])
     #scipy.misc.imshow(imgdata)
 
-    center = anno['objpos']
-    center_float = np.array([int(center[0]), int(center[1])])
-    outimg = data_process.crop(imgdata, center= center_float,  scale=anno['scale_provided'], res=(256, 256), rot=20)
+    center = np.array(anno['objpos'])
+    outimg = data_process.crop(imgdata, center= center,  scale=anno['scale_provided'], res=(256, 256), rot=0)
     outimg_normalized = data_process.normalize(outimg)
 
     print outimg.shape
 
-    newjoints = transform_kp(np.array(anno['joint_self']), center_float, anno['scale_provided'], (256, 256), rot=20)
+    newjoints = data_process.transform_kp(np.array(anno['joint_self']), center, anno['scale_provided'], (64, 64), rot=0)
     #draw_joints(outimg_normalized, newjoints.tolist())
     #scipy.misc.imshow(outimg_normalized)
 
-    mimage = outimg_normalized[:,:,1]
-    gtmap = generate_gt_map(newjoints, sigma=6, outres=(256, 256))
+    mimage = np.zeros(shape=(64, 64), dtype=np.float)
+    gtmap = generate_gt_map(newjoints, sigma=1, outres=(64, 64))
     for i in range(16):
         mimage += gtmap[:, :, i]
     scipy.misc.imshow(mimage)
