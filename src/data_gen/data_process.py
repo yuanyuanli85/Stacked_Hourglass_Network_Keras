@@ -128,3 +128,21 @@ def draw_labelmap(img, pt, sigma, type='Gaussian'):
 
     img[img_y[0]:img_y[1], img_x[0]:img_x[1]] = g[g_y[0]:g_y[1], g_x[0]:g_x[1]]
     return img
+
+
+def transform_kp(joints, center, scale, res, rot):
+    newjoints = np.copy(joints)
+    for i in range(joints.shape[0]):
+        if joints[i, 0] > 0 and joints[i, 1] > 0:
+            _x = transform(newjoints[i, 0:2]+1, center=center, scale=scale, res=res, invert=0, rot=rot)
+            newjoints[i, 0:2] = _x
+    return newjoints
+
+def generate_gtmap(joints, sigma, outres):
+    npart = joints.shape[0]
+    gtmap = np.zeros(shape=(outres[0], outres[1], npart), dtype=float)
+    for i in range(npart):
+        visibility = joints[i,2]
+        if visibility > 0:
+            gtmap[:, :, i] = draw_labelmap(gtmap[:,:,i], joints[i,:], sigma)
+    return gtmap
