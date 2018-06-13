@@ -1,10 +1,13 @@
 import os
+
 import numpy as np
 from random import shuffle
 import scipy.misc
 import json
 
 import data_process
+from timer import Timer
+
 
 class MPIIDataGen(object):
 
@@ -34,12 +37,17 @@ class MPIIDataGen(object):
         else:
             return val_anno
 
-    def generator(self, batch_size,  sigma=1, is_shuffle=False):
+    def get_dataset_size(self):
+        return len(self.anno)
+
+    def get_annotations(self):
+        return self.anno
+
+    def generator(self, batch_size, num_hgstack, sigma=1, is_shuffle=False):
         '''
         Input:  batch_size * inres  * Channel (3)
         Output: batch_size * oures  * nparts
         '''
-
         train_input = np.zeros(shape=(batch_size, self.inres[0], self.inres[1], 3), dtype=np.float)
         gt_heatmap  = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
 
@@ -48,6 +56,7 @@ class MPIIDataGen(object):
                 shuffle(self.anno)
 
             for i, kpanno in enumerate(self.anno):
+                #with Timer():
                 _imageaug, _gthtmap = self.process_image(kpanno, sigma)
                 _index = i%batch_size
 
@@ -55,7 +64,10 @@ class MPIIDataGen(object):
                 gt_heatmap[_index, :, :, :] = _gthtmap
 
                 if i != 0 and i%batch_size == 0:
-                    yield train_input, gt_heatmap
+                    out_hmaps = []
+                    for m in range(num_hgstack):
+                        out_hmaps.append(gt_heatmap)
+                    yield train_input, out_hmaps
 
 
     def process_image(self, kpanno, sigma):

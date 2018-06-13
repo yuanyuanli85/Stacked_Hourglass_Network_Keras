@@ -18,9 +18,11 @@ def main_vis():
                         outres=(64, 64), is_train=True)
 
     count = 0
-    for _img, _gthmap in xdata.generator(1, sigma=1 , is_shuffle=False):
+    for _img, _gthmap in xdata.generator(1, 4, sigma=2 , is_shuffle=False):
+        xgthmap = _gthmap[-1]
+        print np.max(xgthmap)
         #scipy.misc.imshow(_img[0,:,:,:])
-        debug_view_gthmap(_gthmap[0,:,:,:])
+        debug_view_gthmap(xgthmap[0,:,:,:])
 
     print 'scan done'
 
