@@ -38,7 +38,6 @@ if __name__ == "__main__":
     # Create a session with the above options specified.
     k.tensorflow_backend.set_session(tf.Session(config=config))
 
-
     xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, inres=(256, 256), outres=(64, 64))
     xnet.build_model(show=True)
     xnet.train(epochs=args.epochs, model_path=args.model_path, batch_size=args.batch_size)

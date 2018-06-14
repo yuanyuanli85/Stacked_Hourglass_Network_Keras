@@ -1,12 +1,9 @@
 import os
-
 import numpy as np
 from random import shuffle
 import scipy.misc
 import json
-
 import data_process
-from timer import Timer
 
 
 class MPIIDataGen(object):
