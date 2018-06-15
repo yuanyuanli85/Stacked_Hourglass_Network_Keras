@@ -17,8 +17,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_stack",  default=2, type=int, help='num of stacks')
     parser.add_argument("--epochs", default=20, type=int, help="number of traning epochs")
     parser.add_argument("--resume", default=False, type=bool,  help="resume training or not")
-    parser.add_argument("--resumeModel", help="start point to retrain")
-    parser.add_argument("--initEpoch", type=int, help="epoch to resume")
+    parser.add_argument("--resume_model", help="start point to retrain")
+    parser.add_argument("--resume_model_json", help="model json")
+    parser.add_argument("--init_epoch", type=int, help="epoch to resume")
 
     args = parser.parse_args()
 
@@ -38,6 +39,12 @@ if __name__ == "__main__":
     # Create a session with the above options specified.
     k.tensorflow_backend.set_session(tf.Session(config=config))
 
+
     xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, inres=(256, 256), outres=(64, 64))
-    xnet.build_model(show=True)
-    xnet.train(epochs=args.epochs, model_path=args.model_path, batch_size=args.batch_size)
+
+    if args.resume:
+        xnet.resume_train(batch_size=args.batch_size, model_json=args.resume_model_json, model_weights=args.resume_model,
+                          init_epoch=args.init_epoch, epochs=args.epochs)
+    else:
+        xnet.build_model(show=True)
+        xnet.train(epochs=args.epochs, model_path=args.model_path, batch_size=args.batch_size)

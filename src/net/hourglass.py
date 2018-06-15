@@ -8,6 +8,7 @@ from hg_blocks import create_hourglass_network, euclidean_loss
 from mpii_datagen import MPIIDataGen
 from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.models import load_model, model_from_json
+from keras.optimizers import Adam
 import datetime
 import scipy.misc
 from data_process import normalize
@@ -44,8 +45,25 @@ class HourglassNet(object):
         self.model.fit_generator(generator=train_gen, steps_per_epoch=train_dataset.get_dataset_size()//batch_size,
                                  epochs=epochs, callbacks=xcallbacks)
 
-    def resume_train(self):
-        pass
+    def resume_train(self, batch_size, model_json, model_weights, init_epoch, epochs):
+
+        self.load_model(model_json, model_weights)
+        self.model.compile(optimizer=Adam(lr=1e-3), loss=euclidean_loss, metrics=["accuracy"])
+
+        train_dataset = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
+                                    inres=self.inres, outres=self.outres, is_train=True)
+
+        train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=2, is_shuffle=True)
+
+        model_dir = os.path.dirname(os.path.basename(model_json))
+        csvlogger = CSVLogger(os.path.join(model_dir, "csv_train_" + str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
+
+        checkpoint = EvalCallBack(model_dir)
+
+        xcallbacks = [csvlogger, checkpoint]
+
+        self.model.fit_generator(generator=train_gen, steps_per_epoch=train_dataset.get_dataset_size() // batch_size,
+                                 initial_epoch=init_epoch, epochs=epochs, callbacks=xcallbacks)
 
 
     def load_model(self, modeljson, modelfile):
