@@ -40,31 +40,39 @@ class MPIIDataGen(object):
     def get_annotations(self):
         return self.anno
 
-    def generator(self, batch_size, num_hgstack, sigma=1, is_shuffle=False):
+    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False):
         '''
         Input:  batch_size * inres  * Channel (3)
         Output: batch_size * oures  * nparts
         '''
         train_input = np.zeros(shape=(batch_size, self.inres[0], self.inres[1], 3), dtype=np.float)
         gt_heatmap  = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
+        meta_info   = list()
 
         while True:
             if is_shuffle:
                 shuffle(self.anno)
 
             for i, kpanno in enumerate(self.anno):
-                #with Timer():
-                _imageaug, _gthtmap = self.process_image(kpanno, sigma)
+
+                _imageaug, _gthtmap, _meta = self.process_image(kpanno, sigma)
                 _index = i%batch_size
 
-                train_input[_index , :, :, : ] = _imageaug
+                train_input[_index, :, :, :] = _imageaug
                 gt_heatmap[_index, :, :, :] = _gthtmap
+                meta_info.append(_meta)
 
-                if i != 0 and i%batch_size == 0:
+                if i%batch_size == (batch_size -1):
                     out_hmaps = []
                     for m in range(num_hgstack):
                         out_hmaps.append(gt_heatmap)
-                    yield train_input, out_hmaps
+
+                    if with_meta:
+                        yield train_input, out_hmaps, meta_info
+                        meta_info = []
+                    else:
+                        yield train_input, out_hmaps
+
 
 
     def process_image(self, kpanno, sigma):
@@ -84,7 +92,11 @@ class MPIIDataGen(object):
         transformedKps = data_process.transform_kp(np.array(kpanno['joint_self']), center, scale, self.outres, rot)
         gtmap = data_process.generate_gtmap(transformedKps, sigma, self.outres)
 
-        return cropimg, gtmap
+
+        # meta info
+        metainfo =  {'center' : center, 'scale' : scale, 'pts' : np.array(kpanno['joint_self']), 'tpts' : transformedKps}
+
+        return cropimg, gtmap, metainfo
 
 
 
