@@ -44,6 +44,9 @@ def generate_gt_map(joints, sigma, outres):
     return gtmap
 
 def view_crop_image(anno):
+
+    print anno.keys()
+
     img_paths = anno['img_paths']
     img_width = anno['img_width']
     img_height = anno['img_height']
@@ -51,24 +54,47 @@ def view_crop_image(anno):
     #print anno.keys()
 
     imgdata = scipy.misc.imread(os.path.join("../../data/mpii/images", img_paths))
-    #draw_joints(imgdata, anno['joint_self'])
+    draw_joints(imgdata, anno['joint_self'])
     #scipy.misc.imshow(imgdata)
 
     center = np.array(anno['objpos'])
     outimg = data_process.crop(imgdata, center= center,  scale=anno['scale_provided'], res=(256, 256), rot=0)
     outimg_normalized = data_process.normalize(outimg)
-
+ 
     print outimg.shape
 
     newjoints = data_process.transform_kp(np.array(anno['joint_self']), center, anno['scale_provided'], (64, 64), rot=0)
     #draw_joints(outimg_normalized, newjoints.tolist())
     #scipy.misc.imshow(outimg_normalized)
 
+    '''
     mimage = np.zeros(shape=(64, 64), dtype=np.float)
     gtmap = generate_gt_map(newjoints, sigma=1, outres=(64, 64))
     for i in range(16):
         mimage += gtmap[:, :, i]
     scipy.misc.imshow(mimage)
+    '''
+
+    # meta info
+    metainfo = []
+    orgjoints = np.array(anno['joint_self'])
+    for i in range(newjoints.shape[0]):
+        meta = {'center': center, 'scale': anno['scale_provided'], 'pts': orgjoints[i], 'tpts': newjoints[i]}
+        metainfo.append(meta)
+
+    # transform back
+    tpbpts = list()
+    for i in range(newjoints.shape[0]):
+        tpts = newjoints[i]
+        meta = metainfo[i]
+        orgpts = tpts
+        orgpts[0:2] = data_process.transform(tpts, meta['center'], meta['scale'], res=[64, 64], invert=1, rot=0)
+        tpbpts.append(orgpts)
+
+    print tpbpts
+
+    draw_joints(imgdata, np.array(tpbpts))
+    scipy.misc.imshow(imgdata)
 
 
 def main():

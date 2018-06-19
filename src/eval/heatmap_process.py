@@ -18,3 +18,4 @@ def non_max_supression(plain, windowSize=3, threshold=1e-6):
     under_th_indices = plain < threshold
     plain[under_th_indices] = 0
     return plain* (plain == maximum_filter(plain, footprint=np.ones((windowSize, windowSize))))
+
