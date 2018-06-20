@@ -1,6 +1,6 @@
 from keras.models import *
 from keras.layers import *
-from keras.optimizers import Adam
+from keras.optimizers import Adam, RMSprop
 from keras.losses import mean_squared_error
 import keras.backend as K
 
@@ -25,8 +25,8 @@ def create_hourglass_network(num_classes, num_stacks, inres, outres):
             outputs.append(head_to_loss)
         '''
     model = Model(inputs=input, outputs=outputs)
-    adam = Adam(lr=1e-3)
-    model.compile(optimizer=adam, loss=euclidean_loss, metrics=["accuracy"])
+    rms = RMSprop(lr=2.5e-4)
+    model.compile(optimizer=rms, loss=euclidean_loss, metrics=["accuracy"])
 
     return model
 

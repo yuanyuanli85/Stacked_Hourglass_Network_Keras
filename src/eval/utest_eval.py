@@ -12,6 +12,7 @@ import scipy.misc
 from mpii_datagen import MPIIDataGen
 from heatmap_process import post_process_heatmap
 from eval_heatmap import get_predicted_kp_from_htmap, heatmap_accuracy, cal_heatmap_acc
+from scipy.io import loadmat
 
 def main():
     model = create_hourglass_network(16, 2, (256, 256), (64, 64))
@@ -20,6 +21,12 @@ def main():
     plot_model(model, 'hg_s2.png', show_shapes=True)
     for layer in model.output_layers:
         print layer.output_shape
+
+def main_load_mat():
+    predfile = os.path.join( '/home/yli150/pytorch-pose' ,'checkpoint/hg_s8_b1/preds_valid.mat')
+    preds = loadmat(predfile)['preds']
+    print preds.shape, preds.dtype
+
 
 def view_predict_hmap(predout, show_raw=False):
     from data_process import draw_labelmap
@@ -39,6 +46,45 @@ def view_predict_hmap(predout, show_raw=False):
         sumimage += mimage[:,:,i]
     scipy.misc.imshow(sumimage)
 
+
+def main_check_gt():
+
+    def check_gt_invalid_kps(metalst):
+        valid, invalid = 0, 0
+        for meta in metalst:
+            tpts = meta['tpts']
+            for i in range(tpts.shape[0]):
+                if tpts[i, 0] > 0 and tpts[i, 1] > 0 and tpts[i, 2] > 0:
+                    valid += 1
+                else:
+                    invalid += 1
+        return valid , invalid
+
+    valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
+                          inres=(256, 256), outres=(64, 64), is_train=False)
+
+    total_valid, total_invalid = 0, 0
+
+
+    print 'val data size', valdata.get_dataset_size()
+
+    count = 0
+    batch_size = 8
+    for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=2, is_shuffle=False, with_meta=True):
+
+        count += batch_size
+        if count % (batch_size * 100) == 0:
+            print count, 'processed', total_valid, total_invalid
+
+        if count > valdata.get_dataset_size():
+            break
+
+        good, bad = check_gt_invalid_kps(_meta)
+
+        total_valid += good
+        total_invalid += bad
+
+    print total_valid, total_invalid,  total_valid * 1.0 / (total_valid + total_invalid)
 
 
 def main_test():
@@ -77,4 +123,4 @@ def main_test():
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    main_test()
+    main_load_mat()

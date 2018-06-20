@@ -33,7 +33,7 @@ class HourglassNet(object):
     def train(self, batch_size, model_path, epochs):
         train_dataset = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
                                       inres=self.inres,  outres=self.outres, is_train=True)
-        train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=2, is_shuffle=True)
+        train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=True)
 
         csvlogger = CSVLogger(os.path.join(model_path, "csv_train_"+ str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
         modelfile = os.path.join(model_path, 'weights_{epoch:02d}_{loss:.2f}.hdf5')
