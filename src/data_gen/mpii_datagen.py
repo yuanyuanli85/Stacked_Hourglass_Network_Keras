@@ -4,6 +4,7 @@ from random import shuffle
 import scipy.misc
 import json
 import data_process
+import random
 
 
 class MPIIDataGen(object):
@@ -40,7 +41,7 @@ class MPIIDataGen(object):
     def get_annotations(self):
         return self.anno
 
-    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False):
+    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False, rot_flag=False):
         '''
         Input:  batch_size * inres  * Channel (3)
         Output: batch_size * oures  * nparts
@@ -49,13 +50,17 @@ class MPIIDataGen(object):
         gt_heatmap  = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
         meta_info   = list()
 
+        if not self.is_train:
+            assert (is_shuffle == False), 'shuffle must be off in val model'
+            assert (rot_flag == False),  'rot_flag must be off in val model'
+
         while True:
             if is_shuffle:
                 shuffle(self.anno)
 
             for i, kpanno in enumerate(self.anno):
 
-                _imageaug, _gthtmap, _meta = self.process_image(kpanno, sigma)
+                _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma, rot_flag)
                 _index = i%batch_size
 
                 train_input[_index, :, :, :] = _imageaug
@@ -75,16 +80,20 @@ class MPIIDataGen(object):
 
 
 
-    def process_image(self, kpanno, sigma):
+    def process_image(self, sample_index, kpanno, sigma, rot_flag):
         imagefile = kpanno['img_paths']
         image = scipy.misc.imread(os.path.join(self.imgpath, imagefile))
 
         # get center
         center = np.array(kpanno['objpos'])
         scale =  kpanno['scale_provided']
-        rot = 0
 
         # crop image
+        if rot_flag and random.choice([0,1]):
+            rot = np.random.randint(-1*30, 30)
+        else:
+            rot = 0
+
         cropimg = data_process.crop(image, center, scale, self.inres, rot)
         cropimg = data_process.normalize(cropimg)
 
@@ -94,7 +103,8 @@ class MPIIDataGen(object):
 
 
         # meta info
-        metainfo =  {'center' : center, 'scale' : scale, 'pts' : np.array(kpanno['joint_self']), 'tpts' : transformedKps}
+        metainfo =  { 'sample_index': sample_index, 'center' : center, 'scale' : scale,
+                      'pts' : np.array(kpanno['joint_self']), 'tpts' : transformedKps}
 
         return cropimg, gtmap, metainfo
 
