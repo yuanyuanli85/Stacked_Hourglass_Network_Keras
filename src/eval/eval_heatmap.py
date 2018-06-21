@@ -18,7 +18,7 @@ def get_predicted_kp_from_htmap(heatmap, meta):
 
 
 def cal_kp_distance(pre_kp, gt_kp, norm, threshold):
-    if gt_kp[0] > 1 and gt_kp[1] > 1 and gt_kp[2] > 0:
+    if gt_kp[0] > 1 and gt_kp[1] > 1 :
         dif = np.linalg.norm(gt_kp[0:2]- pre_kp[0:2])/norm
         if dif < threshold:
              # good prediction
