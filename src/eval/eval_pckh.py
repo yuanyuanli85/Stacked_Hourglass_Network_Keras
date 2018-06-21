@@ -3,17 +3,16 @@ sys.path.insert(0, "../data_gen/")
 sys.path.insert(0, "../net/")
 
 import os
-from hg_blocks import create_hourglass_network
 from keras.utils import plot_model
 from keras.utils import plot_model
-from hourglass import HourglassNet
 import numpy as np
 import scipy.misc
 from mpii_datagen import MPIIDataGen
 from heatmap_process import post_process_heatmap
 from eval_heatmap import get_predicted_kp_from_htmap, heatmap_accuracy, cal_heatmap_acc
 from scipy.io import loadmat
-
+from pckh import run_pckh
+from hourglass import HourglassNet
 
 def get_final_pred_kps(valkps, preheatmap, metainfo):
 
@@ -27,7 +26,8 @@ def get_final_pred_kps(valkps, preheatmap, metainfo):
 def main_test():
     xnet = HourglassNet(16, 8, (256, 256), (64, 64))
 
-    xnet.load_model("../../trained_models/hg_s8_b1_v1_adam/net_arch.json", "../../trained_models/hg_s8_b1_v1_adam/weights_epoch22.h5")
+    xnet.load_model("../../trained_models/hg_s8_b1_v1_adam/net_arch.json",
+                    "../../trained_models/hg_s8_b1_v1_adam/weights_epoch22.h5")
 
     valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
                                 inres=(256, 256), outres=(64, 64), is_train=False)
@@ -53,8 +53,12 @@ def main_test():
     matfile = os.path.join( "../../trained_models/hg_s8_b1_v1_adam/", 'preds_e22.mat')
     scipy.io.savemat(matfile, mdict={'preds' : valkps})
 
+    run_pckh('hg_s8_b1_epoch22', matfile)
+
 
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    main_test()
+    os.environ["CUDA_VISIBLE_DEVICES"] = '2'
+    #main_test()
+    matfile = os.path.join( "../../trained_models/hg_s8_b1_v1_adam/", 'preds_e22.mat')
+    run_pckh('hg_s8_b1_epoch22', matfile)

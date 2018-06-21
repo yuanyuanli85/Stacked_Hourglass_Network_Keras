@@ -90,7 +90,7 @@ def main_check_gt():
 def main_test():
     xnet = HourglassNet(16, 8, (256, 256), (64, 64))
 
-    xnet.load_model("../../trained_models/hg_s8_b1/net_arch.json", "../../trained_models/hg_s8_b1/weights_epoch60.h5")
+    xnet.load_model("../../trained_models/hg_s8_b1_sigma1/net_arch.json", "../../trained_models/hg_s8_b1_sigma1/weights_epoch22.h5")
 
     valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
                                 inres=(256, 256), outres=(64, 64), is_train=False)
@@ -123,4 +123,5 @@ def main_test():
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    main_load_mat()
+
+    main_test()

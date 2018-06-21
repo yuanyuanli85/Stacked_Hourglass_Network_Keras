@@ -25,7 +25,7 @@ def create_hourglass_network(num_classes, num_stacks, inres, outres):
             outputs.append(head_to_loss)
         '''
     model = Model(inputs=input, outputs=outputs)
-    rms = RMSprop(lr=2.5e-4)
+    rms = RMSprop(lr=5e-4)
     model.compile(optimizer=rms, loss=euclidean_loss, metrics=["accuracy"])
 
     return model
@@ -68,9 +68,10 @@ def create_front_module(input):
 
     _x = Conv2D(64, kernel_size=(7,7), strides=(2, 2), padding='same', activation='relu', name='front_conv_1x1_x1') (input)
     _x = BatchNormalization()(_x)
-    _x = MaxPool2D(pool_size=(2,2), strides=(2,2))(_x)
 
     _x = bottlenect_block(_x, 128, 'front_residual_x1')
+    _x = MaxPool2D(pool_size=(2,2), strides=(2,2))(_x)
+
     _x = bottlenect_block(_x, 128, 'front_residual_x2')
     _x = bottlenect_block(_x, 256, 'front_residual_x3')
 
