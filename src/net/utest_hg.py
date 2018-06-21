@@ -9,10 +9,10 @@ from mpii_datagen import MPIIDataGen
 from heatmap_process import post_process_heatmap
 
 def main():
-    model = create_hourglass_network(16, 2, (256, 256), (64, 64))
+    model = create_hourglass_network(16, 8, (256, 256), (64, 64))
     model.summary()
     print len(model.output_layers)
-    plot_model(model, 'hg_s2.png', show_shapes=True)
+    #plot_model(model, 'hg_s2.png', show_shapes=True)
     for layer in model.output_layers:
         print layer.output_shape
 
@@ -53,4 +53,4 @@ def main_test():
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    main_test()
+    main()

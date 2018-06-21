@@ -53,7 +53,7 @@ class HourglassNet(object):
         train_dataset = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
                                     inres=self.inres, outres=self.outres, is_train=True)
 
-        train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=2, is_shuffle=True)
+        train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=True)
 
         model_dir = os.path.dirname(os.path.basename(model_json))
         csvlogger = CSVLogger(os.path.join(model_dir, "csv_train_" + str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
