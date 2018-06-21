@@ -87,13 +87,17 @@ def crop(img, center, scale, res, rot=0):
     return new_img
 
 
-def normalize(imgdata):
+def normalize(imgdata, color_mean):
     '''
     :param imgdata: image in 0 ~ 255
     :return:  image from 0.0 to 1.0
     '''
-    # todo: add per channel normalization, sub mean and std
-    return imgdata/255.0
+    imgdata = imgdata/255.0
+
+    for i in range(imgdata.shape[-1]):
+        imgdata[:, :, i] -= color_mean[i]
+
+    return imgdata
 
 
 def draw_labelmap(img, pt, sigma, type='Gaussian'):

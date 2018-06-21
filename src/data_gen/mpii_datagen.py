@@ -38,10 +38,14 @@ class MPIIDataGen(object):
     def get_dataset_size(self):
         return len(self.anno)
 
+    def get_color_mean(self):
+        mean = np.array([0.4404, 0.4440, 0.4327], dtype=np.float)
+        return mean
+
     def get_annotations(self):
         return self.anno
 
-    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False, rot_flag=False):
+    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False, rot_flag=False, scale_flag=False):
         '''
         Input:  batch_size * inres  * Channel (3)
         Output: batch_size * oures  * nparts
@@ -60,7 +64,7 @@ class MPIIDataGen(object):
 
             for i, kpanno in enumerate(self.anno):
 
-                _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma, rot_flag)
+                _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma, rot_flag, scale_flag)
                 _index = i%batch_size
 
                 train_input[_index, :, :, :] = _imageaug
@@ -80,13 +84,17 @@ class MPIIDataGen(object):
 
 
 
-    def process_image(self, sample_index, kpanno, sigma, rot_flag):
+    def process_image(self, sample_index, kpanno, sigma, rot_flag, scale_flag):
         imagefile = kpanno['img_paths']
         image = scipy.misc.imread(os.path.join(self.imgpath, imagefile))
 
         # get center
         center = np.array(kpanno['objpos'])
+
+        # scale
         scale =  kpanno['scale_provided']
+        if scale_flag:
+            scale = scale * np.random.uniform(0.8, 1.2)
 
         # crop image
         if rot_flag and random.choice([0,1]):
@@ -95,16 +103,15 @@ class MPIIDataGen(object):
             rot = 0
 
         cropimg = data_process.crop(image, center, scale, self.inres, rot)
-        cropimg = data_process.normalize(cropimg)
+        cropimg = data_process.normalize(cropimg, self.get_color_mean())
 
         # transform keypoints
         transformedKps = data_process.transform_kp(np.array(kpanno['joint_self']), center, scale, self.outres, rot)
         gtmap = data_process.generate_gtmap(transformedKps, sigma, self.outres)
 
-
         # meta info
         metainfo =  { 'sample_index': sample_index, 'center' : center, 'scale' : scale,
-                      'pts' : np.array(kpanno['joint_self']), 'tpts' : transformedKps}
+                      'pts' : np.array(kpanno['joint_self']), 'tpts' : transformedKps, 'name' : imagefile}
 
         return cropimg, gtmap, metainfo
 
