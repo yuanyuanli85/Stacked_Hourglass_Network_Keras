@@ -116,6 +116,13 @@ class MPIIDataGen(object):
         return cropimg, gtmap, metainfo
 
 
-
+    @classmethod
+    def get_kp_keys(cls):
+        keys = ['r_ankle', 'r_knee', 'r_hip',
+                'l_hip',  'l_knee', 'l_ankle',
+                'plevis', 'thorax', 'upper_neck', 'head_top',
+                'r_wrist', 'r_elbow', 'r_shoulder',
+                'l_shoulder', 'l_elbow', 'l_wrist']
+        return keys
 
 
