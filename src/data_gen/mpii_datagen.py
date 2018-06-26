@@ -45,7 +45,8 @@ class MPIIDataGen(object):
     def get_annotations(self):
         return self.anno
 
-    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False, rot_flag=False, scale_flag=False):
+    def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False,
+                  rot_flag=False, scale_flag=False, flip_flag=False):
         '''
         Input:  batch_size * inres  * Channel (3)
         Output: batch_size * oures  * nparts
@@ -64,7 +65,7 @@ class MPIIDataGen(object):
 
             for i, kpanno in enumerate(self.anno):
 
-                _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma, rot_flag, scale_flag)
+                _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma, rot_flag, scale_flag, flip_flag)
                 _index = i%batch_size
 
                 train_input[_index, :, :, :] = _imageaug
@@ -84,19 +85,29 @@ class MPIIDataGen(object):
 
 
 
-    def process_image(self, sample_index, kpanno, sigma, rot_flag, scale_flag):
+    def process_image(self, sample_index, kpanno, sigma, rot_flag, scale_flag, flip_flag):
         imagefile = kpanno['img_paths']
         image = scipy.misc.imread(os.path.join(self.imgpath, imagefile))
 
         # get center
-        center = np.array(kpanno['objpos'])
+        center =  np.array(kpanno['objpos'])
+        joints =  np.array(kpanno['joint_self'])
+        scale =  kpanno['scale_provided']
+
+        # Adjust center/scale slightly to avoid cropping limbs
+        if center[0] != -1:
+            center[1] = center[1] + 15 * scale
+            scale = scale * 1.25
+
+        #filp
+        if flip_flag and random.choice([0,1]):
+           image, joints, center = self.flip(image, joints, center)
 
         # scale
-        scale =  kpanno['scale_provided']
         if scale_flag:
             scale = scale * np.random.uniform(0.8, 1.2)
 
-        # crop image
+        # rotate image
         if rot_flag and random.choice([0,1]):
             rot = np.random.randint(-1*30, 30)
         else:
@@ -106,12 +117,12 @@ class MPIIDataGen(object):
         cropimg = data_process.normalize(cropimg, self.get_color_mean())
 
         # transform keypoints
-        transformedKps = data_process.transform_kp(np.array(kpanno['joint_self']), center, scale, self.outres, rot)
+        transformedKps = data_process.transform_kp(joints, center, scale, self.outres, rot)
         gtmap = data_process.generate_gtmap(transformedKps, sigma, self.outres)
 
         # meta info
         metainfo =  { 'sample_index': sample_index, 'center' : center, 'scale' : scale,
-                      'pts' : np.array(kpanno['joint_self']), 'tpts' : transformedKps, 'name' : imagefile}
+                      'pts' :joints, 'tpts' : transformedKps, 'name' : imagefile}
 
         return cropimg, gtmap, metainfo
 
@@ -126,3 +137,37 @@ class MPIIDataGen(object):
         return keys
 
 
+
+    def flip(self, image, joints, center):
+
+        import cv2
+
+        joints = np.copy(joints)
+
+        matchedParts = (
+            [0,5], #ankle
+            [1,4], #knee
+            [2,3], #hip
+            [10,15], #wrist
+            [11,14], #elbow
+            [12,13]  # shoulder
+        )
+
+        org_height, org_width, channels = image.shape
+
+        #flip image
+        flipimage = cv2.flip(image, flipCode=1)
+
+        #flip each joints
+        joints[:,0] = org_width - joints[:,0]
+
+        for i, j in matchedParts:
+            temp = np.copy(joints[i,:])
+            joints[i, :] = joints[j, :]
+            joints[j, :] = temp
+
+        # center
+        flip_center = center
+        flip_center[0] =  org_width - center[0]
+
+        return flipimage, joints, flip_center
