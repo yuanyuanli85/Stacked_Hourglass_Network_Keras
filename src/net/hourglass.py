@@ -35,7 +35,7 @@ class HourglassNet(object):
         train_dataset = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
                                       inres=self.inres,  outres=self.outres, is_train=True)
         train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=True,
-                                    rot_flag=True, scale_flag=True, flip_flag=True)
+                                    rot_flag=True, scale_flag=True, flip_flag=True, mask_flag=True)
 
         csvlogger = CSVLogger(os.path.join(model_path, "csv_train_"+ str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
         modelfile = os.path.join(model_path, 'weights_{epoch:02d}_{loss:.2f}.hdf5')
@@ -57,7 +57,7 @@ class HourglassNet(object):
                                     inres=self.inres, outres=self.outres, is_train=True)
 
         train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=True,
-                                    rot_flag=True, scale_flag=True, flip_flag=True)
+                                    rot_flag=True, scale_flag=True, flip_flag=True, mask_flag=True)
 
         model_dir = os.path.dirname(os.path.abspath(model_json))
         print model_dir , model_json

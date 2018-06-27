@@ -103,5 +103,37 @@ def main():
         view_crop_image(_anno)
 
 
+def get_kp_count():
+    matchedParts = { \
+        'ankle': [0, 5],  # ankle
+        'knee': [1, 4],  # knee
+        'hip': [2, 3],  # hip
+        'wrist' : [10, 15],  # wrist
+        'elbow' : [11, 14],  # elbow
+        'shoulder' : [12, 13],  # shoulder
+        'plevis': [6],
+        'thorax': [7],
+        'upper_neck' : [8],
+        'head_top' : [9]
+    }
+
+    annolst = load_sample_ids("../../data/mpii/mpii_annotations.json", is_train=False)
+
+    sum = np.zeros((16), dtype=np.float)
+    for _anno in annolst:
+        joints = np.array(_anno['joint_self'])
+        visiblekp = joints[:,2]
+        sum += visiblekp
+
+    print sum
+
+    x = {key:0 for key in matchedParts.keys()}
+
+    for key in matchedParts.keys():
+        for i in matchedParts[key]:
+            x[key] += sum[i]
+        x[key] = x[key] / len(matchedParts[key])
+    print x
+
 if __name__ == '__main__':
-    main()
+    get_kp_count()

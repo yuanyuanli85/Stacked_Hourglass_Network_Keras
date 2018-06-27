@@ -8,14 +8,18 @@ def create_hourglass_network(num_classes, num_stacks, inres, outres):
 
     input = Input(shape=(inres[0], inres[1], 3))
 
+    mask =  Input(shape=(outres[0], outres[1], num_classes))
+
     front_features = create_front_module(input)
 
     head_next_stage = front_features
 
+
     outputs = []
     for i in range(num_stacks):
         head_next_stage, head_to_loss = hourglass_module(head_next_stage, num_classes, i)
-        outputs.append(head_to_loss)
+        head_with_mask = Multiply(name='mask_stage_'+str(i))([head_to_loss, mask])
+        outputs.append(head_with_mask)
         '''
         if i == num_stacks - 1:
             # last stage, append last head
@@ -24,7 +28,7 @@ def create_hourglass_network(num_classes, num_stacks, inres, outres):
         else:
             outputs.append(head_to_loss)
         '''
-    model = Model(inputs=input, outputs=outputs)
+    model = Model(inputs=[input, mask], outputs=outputs)
     rms = RMSprop(lr=5e-4)
     model.compile(optimizer=rms, loss=mean_squared_error, metrics=["accuracy"])
 

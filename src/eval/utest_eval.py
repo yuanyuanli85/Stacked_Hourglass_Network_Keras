@@ -30,6 +30,7 @@ def main_load_mat():
 
 def view_predict_hmap(predout, show_raw=False):
     from data_process import draw_labelmap
+    import cv2
     gtmap = predout[-1]
     gtmap = gtmap[0,:,:,:]
 
@@ -45,6 +46,8 @@ def view_predict_hmap(predout, show_raw=False):
     for i in range(gtmap.shape[-1]):
         sumimage += mimage[:,:,i]
     scipy.misc.imshow(sumimage)
+    #cv2.imshow('image', sumimage)
+    #cv2.waitKey()
 
 
 def main_check_gt():
@@ -70,14 +73,17 @@ def main_check_gt():
 
     count = 0
     batch_size = 8
-    for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=2, is_shuffle=False, with_meta=True):
+    for _img, _gthmap, _meta in valdata.generator(batch_size, 2, sigma=2, is_shuffle=False, with_meta=True):
+
+        if count < valdata.get_dataset_size():
+            continue
 
         count += batch_size
         if count % (batch_size * 100) == 0:
             print count, 'processed', total_valid, total_invalid
 
-        if count > valdata.get_dataset_size():
-            break
+        #if count > valdata.get_dataset_size():
+        #    break
 
         good, bad = check_gt_invalid_kps(_meta)
 
@@ -90,7 +96,8 @@ def main_check_gt():
 def main_test():
     xnet = HourglassNet(16, 8, (256, 256), (64, 64))
 
-    xnet.load_model("../../trained_models/hg_s8_b1_sigma1/net_arch.json", "../../trained_models/hg_s8_b1_sigma1/weights_epoch22.h5")
+    xnet.load_model("../../trained_models/hg_s2_b1_mse_aug/net_arch.json",
+                    "../../trained_models/hg_s2_b1_mse_aug/weights_epoch43.h5")
 
     valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
                                 inres=(256, 256), outres=(64, 64), is_train=False)
@@ -102,16 +109,18 @@ def main_test():
 
     count = 0
     batch_size = 8
-    for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=2, is_shuffle=False , with_meta=True):
+    for _img, _gthmap, _meta in valdata.generator(batch_size, 2, sigma=1, is_shuffle=False , with_meta=True):
 
         count += batch_size
         if count % (batch_size*100) == 0:
             print count, 'processed', total_good, total_fail
 
-        if count > valdata.get_dataset_size():
-            break
+        if count < valdata.get_dataset_size():
+            continue
 
         out = xnet.model.predict(_img)
+
+        view_predict_hmap(out, show_raw=True)
 
         good, bad = cal_heatmap_acc(out[-1], _meta, threshold)
 
@@ -122,6 +131,6 @@ def main_test():
 
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 
     main_test()

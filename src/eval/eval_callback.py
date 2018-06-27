@@ -14,7 +14,7 @@ class EvalCallBack(keras.callbacks.Callback):
     def get_folder_path(self):
         return self.foldpath
 
-    def run_eval(self, epoch):
+    def run_eval(self, epoch, mask_flag):
         valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json",
                               "../../data/mpii/images",
                               inres=(256, 256), outres=(64, 64), is_train=False)
@@ -24,13 +24,16 @@ class EvalCallBack(keras.callbacks.Callback):
 
         count = 0
         batch_size = 8
-        for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=2, is_shuffle=False, with_meta=True):
+
+        num_stack = len(self.model.output_layers)
+        for _input, _gthmap, _meta in valdata.generator(batch_size, num_stack, sigma=2, is_shuffle=False,
+                                                      with_meta=True, mask_flag=mask_flag):
 
             count += batch_size
             if count > valdata.get_dataset_size():
                 break
 
-            out = self.model.predict(_img)
+            out = self.model.predict(_input)
 
             suc, bad = cal_heatmap_acc(out[-1], _meta, threshold)
 
@@ -60,5 +63,11 @@ class EvalCallBack(keras.callbacks.Callback):
 
         print "Saving model to ", modelName
 
-        self.run_eval(epoch)
+        self.run_eval(epoch, self.check_mask_in_input())
 
+
+    def check_mask_in_input(self):
+        input_num = self.model.input_layers
+        if input_num > 1:
+            return True
+        return False

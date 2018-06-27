@@ -28,7 +28,8 @@ def main_vis():
                         outres=(64, 64), is_train=True)
 
     count = 0
-    for _img, _gthmap, _meta in xdata.generator(1, 4, sigma=1 , with_meta=True, is_shuffle=True, rot_flag=True, scale_flag=True):
+    for _img, _gthmap, _meta in xdata.generator(1, 4, sigma=1 , with_meta=True, is_shuffle=True,
+                                                rot_flag=True, scale_flag=True, flip_flag=True):
         xgthmap = _gthmap[-1]
         print _img.dtype
         #scipy.misc.imshow(_img[0,:,:,:])

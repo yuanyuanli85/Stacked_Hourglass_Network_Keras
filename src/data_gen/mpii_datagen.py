@@ -46,13 +46,15 @@ class MPIIDataGen(object):
         return self.anno
 
     def generator(self, batch_size, num_hgstack, sigma=1, with_meta=False, is_shuffle=False,
-                  rot_flag=False, scale_flag=False, flip_flag=False):
+                  rot_flag=False, scale_flag=False, flip_flag=False, mask_flag=False):
         '''
         Input:  batch_size * inres  * Channel (3)
         Output: batch_size * oures  * nparts
         '''
         train_input = np.zeros(shape=(batch_size, self.inres[0], self.inres[1], 3), dtype=np.float)
         gt_heatmap  = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
+        weight_map  = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
+
         meta_info   = list()
 
         if not self.is_train:
@@ -69,19 +71,28 @@ class MPIIDataGen(object):
                 _index = i%batch_size
 
                 train_input[_index, :, :, :] = _imageaug
-                gt_heatmap[_index, :, :, :] = _gthtmap
+
+                if mask_flag:
+                    _weightmap = self.make_weight_map()
+                    gt_heatmap[_index, :, :, :] = _gthtmap * _weightmap
+                    weight_map[_index, :, :, :] = _weightmap
+                else:
+                    gt_heatmap[_index, :, :, :] = _gthtmap
                 meta_info.append(_meta)
 
                 if i%batch_size == (batch_size -1):
-                    out_hmaps = []
-                    for m in range(num_hgstack):
-                        out_hmaps.append(gt_heatmap)
+                    out_hmaps = [gt_heatmap for m in range(num_hgstack) ]
+
+                    if mask_flag:
+                        inputs = [train_input, weight_map]
+                    else:
+                        inputs = train_input
 
                     if with_meta:
-                        yield train_input, out_hmaps, meta_info
+                        yield inputs, out_hmaps, meta_info
                         meta_info = []
                     else:
-                        yield train_input, out_hmaps
+                        yield inputs, out_hmaps
 
 
 
@@ -136,6 +147,17 @@ class MPIIDataGen(object):
                 'l_shoulder', 'l_elbow', 'l_wrist']
         return keys
 
+
+    def make_weight_map(self):
+        # for val, the weight for each kp is the same, as 1.0
+        # for training, 1.4 for ankle, 1.2 for knee
+        weight_map  = np.ones(shape=(self.outres[0], self.outres[1], self.nparts), dtype=np.float)
+        if self.is_train:
+            weight_map[:, :, 0] = 1.4
+            weight_map[:, :, 5] = 1.4
+            weight_map[:, :, 1] = 1.2
+            weight_map[:, :, 4] = 1.2
+        return weight_map
 
 
     def flip(self, image, joints, center):
