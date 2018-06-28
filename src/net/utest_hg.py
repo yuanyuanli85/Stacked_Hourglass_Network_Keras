@@ -1,5 +1,5 @@
 import os
-from hg_blocks import create_hourglass_network
+from hg_blocks import create_hourglass_network, bottleneck_block, bottleneck_mobile
 from keras.utils import plot_model
 from keras.utils import plot_model
 from hourglass import HourglassNet
@@ -9,7 +9,7 @@ from mpii_datagen import MPIIDataGen
 from heatmap_process import post_process_heatmap
 
 def main():
-    model = create_hourglass_network(16, 8, (256, 256), (64, 64))
+    model = create_hourglass_network(16, 8, (256, 256), (64, 64), bottleneck_mobile)
     model.summary()
     print len(model.output_layers)
     #plot_model(model, 'hg_s2.png', show_shapes=True)
