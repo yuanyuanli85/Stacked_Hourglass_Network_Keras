@@ -4,7 +4,7 @@ sys.path.insert(0, "../eval/")
 
 
 import os
-from hg_blocks import create_hourglass_network, euclidean_loss
+from hg_blocks import create_hourglass_network, euclidean_loss, bottleneck_block, bottleneck_mobile
 from mpii_datagen import MPIIDataGen
 from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.models import load_model, model_from_json
@@ -25,8 +25,11 @@ class HourglassNet(object):
         self.outres = outres
 
 
-    def build_model(self, show=False):
-        self.model = create_hourglass_network(self.num_classes, self.num_stacks, self.inres, self.outres)
+    def build_model(self, mobile=False, show=False):
+        if mobile:
+            self.model = create_hourglass_network(self.num_classes, self.num_stacks, self.inres, self.outres, bottleneck_mobile)
+        else:
+            self.model = create_hourglass_network(self.num_classes, self.num_stacks, self.inres, self.outres, bottleneck_block)
         # show model summary and layer name
         if show :
             self.model.summary()
