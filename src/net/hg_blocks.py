@@ -57,7 +57,7 @@ def bottleneck_block(bottom, num_out_channels, block_name):
     _x = BatchNormalization()(_x)
     _x = Conv2D(num_out_channels, kernel_size=(1,1), activation='relu', padding='same', name=block_name+'_conv_1x1_x3') (_x)
     _x = BatchNormalization()(_x)
-    _x = Add(name=block_name+'_redisual')([_skip, _x])
+    _x = Add(name=block_name+'_residual')([_skip, _x])
 
     return _x
 
@@ -76,7 +76,7 @@ def bottleneck_mobile(bottom, num_out_channels, block_name):
     _x = BatchNormalization()(_x)
     _x = SeparableConv2D(num_out_channels, kernel_size=(1,1), activation='relu', padding='same', name=block_name+'_conv_1x1_x3') (_x)
     _x = BatchNormalization()(_x)
-    _x = Add(name=block_name+'_redisual')([_skip, _x])
+    _x = Add(name=block_name+'_residual')([_skip, _x])
 
     return _x
 
@@ -128,7 +128,8 @@ def connect_left_to_right(left, right, bottleneck, name):
 
     _xleft  = bottleneck(left, 256, name+'_connect')
     _xright = UpSampling2D()(right)
-    out = Add()([_xleft, _xright])
+    add = Add()([_xleft, _xright])
+    out = bottleneck(add, 256, name+'_connect_conv')
     return out
 
 def bottom_layer(lf8, bottleneck, hgid):
