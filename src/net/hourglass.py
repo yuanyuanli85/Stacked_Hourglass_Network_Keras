@@ -101,7 +101,8 @@ class HourglassNet(object):
 
     def inference_file(self, imgfile, mean=None):
         imgdata = scipy.misc.imread(imgfile)
-        ret = self._inference(imgdata, imgfile.shape, mean)
+        ret = self.inference_rgb(imgdata, imgdata.shape, mean)
+        return ret
 
 
 
