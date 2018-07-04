@@ -14,7 +14,12 @@ This is a Keras implementation for stacked hourglass network for single human po
 - `trained_models` : folder to restore trained models.
 
 ## Demo
+- Download pre-trained model from this baidu  [hg_s2_b1_mobile](https://pan.baidu.com/s/15NGJv1e-_5wqpu5NvJIifQ) and  [hg_s2_b1](https://pan.baidu.com/s/1Brjc9deRehnj7FhPV0UUOQ), put them under `trained_models`
 
+- Run a quick demo to predict sample image
+```
+python demo.py --gpuID 0 --model_json ../../trained_models/hg_s2_b1/net_arch.json  --model_weights ../../trained_models/hg_s2_b1/weights_epoch89.h5  --conf_threshold 0.1 --input_image ../../images/sample.jpg
+```
 ## Train
 #### MPII Data Preparation
 - Download MPII Dataset and put its images under `data/mpii/images`
@@ -25,10 +30,10 @@ This is a Keras implementation for stacked hourglass network for single human po
 ```
 python train.py --gpuID 0 --epochs 100 --batch_size 2 --num_stack 2 --model_path ../../trained_models/hg_s2_b1_m
 ```
-- Arguments:  
+**Arguments**:  
 `gpuID` gpu id, `epochs` number of epoch to train, `batch_size` batch size of samples to train,  
 `num_stack` number of hourglass stack, `model_path` path to store trained model snapshot  
-- Note:  
+**Note**:  
 When `mobile` set as True, `SeparableConv2D()` is used instead of standard convolution, which is much smaller and faster.
 
 
@@ -38,3 +43,10 @@ python train.py --gpuID 0 --epochs 100 --batch_size 2 --num_stack 2 --model_path
 ```
 
 ## Eval
+Run evaluation on MPII validation dataset by using PCKh=0.5.
+```
+python eval.py --gpuID 1 --model_weights ../../trained_models/hg_s2_b1_mobile/weights_epoch70.h5  --model_json ../../trained_models/hg_s2_b1_mobile/net_arch.json --mat_file ../../trained_models/hg_s2_b1_mobile/preds.mat --num_stack 2
+```
+The validation score curve for `hg_s2_b1` and `hg_s2_b1_mobile`  
+
+![curve](./images/val_score.png)
