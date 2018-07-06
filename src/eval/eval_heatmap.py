@@ -1,24 +1,14 @@
 
 from heatmap_process import post_process_heatmap
-import data_process
 import numpy as np
 import copy
 
 def get_predicted_kp_from_htmap(heatmap, meta):
-    # nms to get location
-    kplst = post_process_heatmap(heatmap)
-    kps  = np.array(kplst)
-
-    # use meta information to transform back to original image
-    mkps = copy.copy(kps)
-    for i in range(kps.shape[0]):
-        mkps[i, 0:2] = data_process.transform(kps[i], meta['center'], meta['scale'], res=[64, 64], invert=1, rot=0)
-
-    return mkps
+    pass
 
 
 def cal_kp_distance(pre_kp, gt_kp, norm, threshold):
-    if gt_kp[0] > 1 and gt_kp[1] > 1 :
+    if gt_kp[2] > 1: # only valid key points
         dif = np.linalg.norm(gt_kp[0:2]- pre_kp[0:2])/norm
         if dif < threshold:
              # good prediction
@@ -31,7 +21,6 @@ def cal_kp_distance(pre_kp, gt_kp, norm, threshold):
 def heatmap_accuracy(predhmap, meta, norm, threshold):
 
     pred_kps  = post_process_heatmap(predhmap)
-    pred_kps  = np.array(pred_kps)
 
     gt_kps = meta['tpts']
 

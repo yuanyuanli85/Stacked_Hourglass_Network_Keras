@@ -14,7 +14,9 @@ def post_process_heatmap(heatMap, kpConfidenceTh=0.2):
             kplst.append((int(x[0]), int(y[0]), _nmsPeaks[y[0], x[0]]))
         else:
             kplst.append((0, 0, 0))
-    return kplst
+
+    kp = np.array(kplst)
+    return kp
 
 def non_max_supression(plain, windowSize=3, threshold=1e-6):
     # clear value less than threshold

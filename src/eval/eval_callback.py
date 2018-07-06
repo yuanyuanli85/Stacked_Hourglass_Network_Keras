@@ -2,29 +2,28 @@ import keras
 import os
 import datetime
 from time import time
-from mpii_datagen import MPIIDataGen
-from eval_heatmap import cal_heatmap_acc
+from src.data_coco.coco_datagen import CocoDataGen
+from src.config.config import AllConfig
+from src.eval.eval_heatmap import cal_heatmap_acc
 
 class EvalCallBack(keras.callbacks.Callback):
 
     def __init__(self, foldpath):
         self.foldpath = foldpath
 
-
     def get_folder_path(self):
         return self.foldpath
 
     def run_eval(self, epoch):
-        valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json",
-                              "../../data/mpii/images",
-                              inres=(256, 256), outres=(64, 64), is_train=False)
+
+        valdata = CocoDataGen(AllConfig.datacfg, train=False)
 
         total_suc, total_fail = 0, 0
         threshold = 0.5
 
         count = 0
         batch_size = 8
-        for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=2, is_shuffle=False, with_meta=True):
+        for _img, _gthmap, _meta in valdata.generator(batch_size, 2, sigma=2, is_shuffle=False, with_meta=True):
 
             count += batch_size
             if count > valdata.get_dataset_size():
@@ -37,9 +36,9 @@ class EvalCallBack(keras.callbacks.Callback):
             total_suc += suc
             total_fail += bad
 
-        acc = total_suc*1.0 / (total_fail + total_suc)
+        acc = total_suc * 1.0 / (total_fail + total_suc)
 
-        print 'Eval Accuray ', acc, '@ Epoch ', epoch
+        print 'Eval Accuracy ', acc, '@ Epoch ', epoch
 
         with open(os.path.join(self.get_folder_path(), 'val.txt'), 'a+') as xfile:
             xfile.write('Epoch ' + str(epoch) + ':' + str(acc) + '\n')
@@ -47,7 +46,7 @@ class EvalCallBack(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         # This is a walkaround to sovle model.save() issue
         # in which large network can't be saved due to size.
-        
+
         # save model to json
         if epoch == 0:
             jsonfile = os.path.join(self.foldpath, "net_arch.json")

@@ -1,12 +1,11 @@
-import sys
-sys.path.insert(0, "../data_gen/")
-sys.path.insert(0, "../net/")
-
 import argparse
 import os
+
 import tensorflow as tf
 from keras import backend as k
-from hourglass import HourglassNet
+
+from src.net.hourglass import HourglassNet
+from src.config.config import AllConfig
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,11 +39,11 @@ if __name__ == "__main__":
     k.tensorflow_backend.set_session(tf.Session(config=config))
 
 
-    xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, inres=(256, 256), outres=(64, 64))
+    # Default Configuration.
+    defaultConf = AllConfig
+    defaultConf.netcfg.STACK_NUM = args.num_stack
 
-    if args.resume:
-        xnet.resume_train(batch_size=args.batch_size, model_json=args.resume_model_json, model_weights=args.resume_model,
-                          init_epoch=args.init_epoch, epochs=args.epochs)
-    else:
-        xnet.build_model(mobile=args.mobile, show=True)
-        xnet.train(epochs=args.epochs, model_path=args.model_path, batch_size=args.batch_size)
+    xnet = HourglassNet(defaultConf)
+
+    xnet.build_model(mobile=args.mobile, show=True)
+    xnet.train(epochs=args.epochs, model_path=args.model_path, batch_size=args.batch_size)
