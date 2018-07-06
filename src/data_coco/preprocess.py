@@ -51,13 +51,14 @@ def normalize_image(cvmat, cfg=DataConfig()):
     cvmat = cvmat / 255.0
     return cvmat
 
-def rotate_image(cvmat, kpoints, angle, cfg=DataConfig()):
+def rotate_image(cvmat, input_Kpoints, angle, cfg=DataConfig()):
     target_width, target_height = cfg.IMAGE_WIDTH, cfg.IMAGE_HEIGHT
     center = (cvmat.shape[1]//2,  cvmat.shape[0]//2)
 
     rotMat = cv2.getRotationMatrix2D(center, angle, 1.0)
     rotCvmat = cv2.warpAffine(cvmat, rotMat, (target_width, target_height))
 
+    kpoints = np.copy(input_Kpoints)
     kpoints = kpoints.astype(np.float)
 
     rotkps = np.zeros(kpoints.shape, dtype=np.float)
@@ -117,3 +118,21 @@ def generate_gtmap(joints, sigma, outres):
         if visibility > 0:
             gtmap[:, :, i] = draw_labelmap(gtmap[:,:,i], joints[i,:], sigma)
     return gtmap
+
+
+def flip_image(image, keypoints, pairlst):
+
+    h, w, c = image.shape
+
+    flipimg = cv2.flip(image, flipCode=1)
+
+    mkp = np.copy(keypoints)
+    mkp[:,0] = w - mkp[:, 0]
+
+    for i, j in pairlst:
+        temp = np.copy(mkp[i, :])
+        mkp[i, :] = mkp[j, :]
+        mkp[j, :] = temp
+
+    return flipimg, mkp.astype(np.int)
+

@@ -34,6 +34,13 @@ class DataConfig(object):
     CROP_SCALE = 1.1
     ASPECT_RATIO = IMAGE_HEIGHT*1.0/IMAGE_WIDTH
 
+    COCO_KP_ANNO_KEYS=[u'nose', u'left_eye', u'right_eye', u'left_ear', u'right_ear', \
+                       u'left_shoulder', u'right_shoulder', u'left_elbow', u'right_elbow', \
+                       u'left_wrist', u'right_wrist', u'left_hip', u'right_hip', \
+                       u'left_knee', u'right_knee', u'left_ankle', u'right_ankle']
+
+                           #eyes,  ear ,   shoulder  elbow   wrist    hip       knee     ankle
+    COCO_SYMMETRY_PARIS = [(1, 2), (3, 4), (5, 6) , (7, 8), (9, 10), (11, 12), (13, 14), (15, 16)]
 
 class AllConfig(object):
     datacfg = DataConfig()

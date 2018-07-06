@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 # Add COCO_PATH into PYTHON PATH
-sys.path.insert(0, "../../cocoapi/PythonAPI")
+sys.path.insert(0, "../../data/cocoapi/PythonAPI")
 
 from pycocotools.coco import COCO
 

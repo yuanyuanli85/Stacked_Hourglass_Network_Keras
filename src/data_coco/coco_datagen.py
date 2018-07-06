@@ -1,9 +1,7 @@
-from random import shuffle
-
+from random import shuffle, choice
 import numpy as np
-
 from coco_anno import get_coco_kp_annotation
-from preprocess import crop_image, normalize_image, generate_gtmap
+from preprocess import crop_image, normalize_image, generate_gtmap, rotate_image, flip_image
 
 
 class CocoDataGen(object):
@@ -65,19 +63,27 @@ class CocoDataGen(object):
                         yield train_input, out_hmaps
 
 
-
     def process_image(self, sample_index, kpanno, sigma, rot_flag, scale_flag, flip_flag):
         # crop image
         cvmat, keypoints = crop_image(kpanno, cfg=self.cfg)
         cvmat = normalize_image(cvmat)
 
-        # generate heatmap
-        # downsample to 1/4
+        #rotate image
+        if rot_flag and choice([0, 1]):
+            angle = np.random.randint(-1*30, 30)
+            cvmat, keypoints = rotate_image(cvmat, keypoints, angle, self.cfg)
+
+        #flip image
+        if flip_flag and choice([0, 1]):
+            cvmat, keypoints = flip_image(cvmat, keypoints, self.cfg.COCO_SYMMETRY_PARIS)
+
+        # downsample to 1/4 for ground truth heatmap
         gtkpoints = np.copy(keypoints)
         gtkpoints[:,0] = gtkpoints[:,0]/4.0
         gtkpoints[:,1] = gtkpoints[:,1]/4.0
         gtkpoints = gtkpoints.astype(np.int)
 
+        # generate heatmap
         gtmap = generate_gtmap(gtkpoints, sigma,
                                  (self.cfg.NETWORK_OUT_HEIGHT, self.cfg.NETWORK_OUT_WIDTH))
         # meta info
