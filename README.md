@@ -14,12 +14,16 @@ This is a Keras implementation for stacked hourglass network for single human po
 - `trained_models` : folder to restore trained models.
 
 ## Demo
-- Download pre-trained model from this baidu  [hg_s2_b1_mobile](https://pan.baidu.com/s/15NGJv1e-_5wqpu5NvJIifQ) and  [hg_s2_b1](https://pan.baidu.com/s/1Brjc9deRehnj7FhPV0UUOQ), put them under `trained_models`
+- Download pre-trained model from shared drive and put them under `trained_models`  
+  BaiDu Pan:  [hg_s2_b1_mobile](https://pan.baidu.com/s/15NGJv1e-_5wqpu5NvJIifQ) and  [hg_s2_b1](https://pan.baidu.com/s/1Brjc9deRehnj7FhPV0UUOQ)  
+  Google Drive: [hg_s2_b1_mobile](https://drive.google.com/open?id=12lbNv7jTQDZArf-lVaZ9yKj6Jr7qB1tQ) and 
+  [hg_s2_b1](https://drive.google.com/open?id=12ioJONmse658qc9fgMpzSy2D_JCdkFVg)
 
 - Run a quick demo to predict sample image
 ```
 python demo.py --gpuID 0 --model_json ../../trained_models/hg_s2_b1/net_arch.json  --model_weights ../../trained_models/hg_s2_b1/weights_epoch89.h5  --conf_threshold 0.1 --input_image ../../images/sample.jpg
 ```
+
 ## Train
 #### MPII Data Preparation
 - Download MPII Dataset and put its images under `data/mpii/images`
@@ -50,3 +54,8 @@ python eval.py --gpuID 1 --model_weights ../../trained_models/hg_s2_b1_mobile/we
 The validation score curve for `hg_s2_b1` and `hg_s2_b1_mobile`  
 
 ![curve](./images/val_score.png)
+
+
+## Issues
+
+- Validation score drop significantly after 40 epochs. It is not stable as pytorch implementation.  Did not root cause it yet.
