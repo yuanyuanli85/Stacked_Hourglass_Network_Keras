@@ -23,18 +23,17 @@ This is a Keras implementation for stacked hourglass network for single human po
 #### Train network
 - Train from scratch, use `python train.py --help` to check all the valid arguments.   
 ```
-python train.py --gpuID 0 --epochs 100 --batch_size 2 --num_stack 2 --model_path ../../trained_models/hg_s2_b1_m
+python train.py --gpuID 0 --epochs 100 --batch_size 24 --num_stack 2 --model_path ../../trained_models/hg_s2_b1_m
 ```
 - Arguments:  
-`gpuID` gpu id, `epochs` number of epoch to train, `batch_size` batch size of samples to train,  
-`num_stack` number of hourglass stack, `model_path` path to store trained model snapshot  
+`gpuID` gpu id, `epochs` number of epoch to train, `batch_size` batch size of samples to train, `num_stack` number of hourglass stack, `model_path` path to store trained model snapshot  
 - Note:  
 When `mobile` set as True, `SeparableConv2D()` is used instead of standard convolution, which is much smaller and faster.
 
 
 - Continue training from previous checkpoint  
 ```
-python train.py --gpuID 0 --epochs 100 --batch_size 2 --num_stack 2 --model_path ../../trained_models/hg_s2_b1_m  --resume True --resume_model_json ../../trained_models/hg_s2_b1_m/net_arch.json --resume_model ../../trained_models/hg_s2_b1_m/weights_epoch15.h5 --init_epoch 16
+python train.py --gpuID 0 --epochs 100 --batch_size 24 --num_stack 2 --model_path ../../trained_models/hg_s2_b1_m  --resume True --resume_model_json ../../trained_models/hg_s2_b1_m/net_arch.json --resume_model ../../trained_models/hg_s2_b1_m/weights_epoch15.h5 --init_epoch 16
 ```
 
 ## Eval
