@@ -3,6 +3,7 @@ from keras.layers import *
 from keras.optimizers import Adam, RMSprop
 from keras.losses import mean_squared_error
 import keras.backend as K
+from upsampling2d import UpSampling2D
 
 def create_hourglass_network(num_classes, num_stacks, inres, outres, lr, bottleneck):
 
@@ -16,17 +17,10 @@ def create_hourglass_network(num_classes, num_stacks, inres, outres, lr, bottlen
     for i in range(num_stacks):
         head_next_stage, head_to_loss = hourglass_module(head_next_stage, num_classes, bottleneck, i)
         outputs.append(head_to_loss)
-        '''
-        if i == num_stacks - 1:
-            # last stage, append last head
-            last_head = Conv2D(num_classes, kernel_size=(1,1), activation='linear', padding='same') (head_next_stage)
-            outputs.append(last_head)
-        else:
-            outputs.append(head_to_loss)
-        '''
+
     model = Model(inputs=input, outputs=outputs)
     rms = RMSprop(lr=lr)
-    model.compile(optimizer=rms, loss=mean_squared_error, metrics=["accuracy"])
+    model.compile(optimizer=rms, loss=mean_squared_error)
 
     return model
 
@@ -127,7 +121,7 @@ def connect_left_to_right(left, right, bottleneck, name):
     # Add   -> left + right
 
     _xleft  = bottleneck(left, 256, name+'_connect')
-    _xright = UpSampling2D()(right)
+    _xright = UpSampling2D(interpolation='bilinear')(right)
     add = Add()([_xleft, _xright])
     out = bottleneck(add, 256, name+'_connect_conv')
     return out
@@ -161,19 +155,16 @@ def create_right_half_blocks(leftfeatures, bottleneck, hglayer):
 
 def create_heads(prelayerfeatures, rf1, num_classes, hgid):
     # two head, one head to next stage, one head to intermediate features
-    head =  Conv2D(256, kernel_size=(1,1), activation='relu', padding='same', name=str(hgid)+'_conv_1x1_x1') (rf1)
+    head =  Conv2D(256, kernel_size=(1,1), activation='relu', padding='same', name='hg_'+str(hgid)+'_conv_1x1_x1') (rf1)
     head = BatchNormalization()(head)
 
     # for head as intermediate supervision, use 'linear' as activation.
-    head_parts = Conv2D(num_classes, kernel_size=(1,1), activation='linear', padding='same', name=str(hgid)+'_conv_1x1_parts') (head)
+    head_parts = Conv2D(num_classes, kernel_size=(1,1), activation='linear', padding='same', name='hg_'+str(hgid)+'_conv_1x1_parts') (head)
 
     # use linear activation
-    head = Conv2D(256, kernel_size=(1,1), activation='linear', padding='same', name=str(hgid)+'_conv_1x1_x2') (head)
-    head_m = Conv2D(256, kernel_size=(1,1), activation='linear', padding='same', name=str(hgid)+'_conv_1x1_x3') (head_parts)
+    head = Conv2D(256, kernel_size=(1,1), activation='linear', padding='same', name='hg_'+str(hgid)+'_conv_1x1_x2') (head)
+    head_m = Conv2D(256, kernel_size=(1,1), activation='linear', padding='same', name='hg_'+str(hgid)+'_conv_1x1_x3') (head_parts)
 
     head_next_stage = Add()([head, head_m, prelayerfeatures])
     return head_next_stage, head_parts
 
-
-def euclidean_loss(x, y):
-        return K.sqrt(K.sum(K.square(x - y)))
