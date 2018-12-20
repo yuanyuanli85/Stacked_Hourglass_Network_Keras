@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--resume_model", help="start point to retrain")
     parser.add_argument("--resume_model_json", help="model json")
     parser.add_argument("--init_epoch", type=int, help="epoch to resume")
+    parser.add_argument("--tiny", default=False, type=bool, help="tiny network for speed, inres=[192x128], channel=128")
 
     args = parser.parse_args()
 
@@ -40,7 +41,10 @@ if __name__ == "__main__":
     k.tensorflow_backend.set_session(tf.Session(config=config))
 
 
-    xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, inres=(256, 256), outres=(64, 64))
+    if args.tiny:
+        xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, num_channels=128, inres=(192, 128), outres=(48, 32))
+    else:
+        xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, num_channels=256, inres=(256, 256), outres=(64, 64))
 
     if args.resume:
         xnet.resume_train(batch_size=args.batch_size, model_json=args.resume_model_json, model_weights=args.resume_model,
