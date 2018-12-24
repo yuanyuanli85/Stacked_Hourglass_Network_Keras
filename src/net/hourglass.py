@@ -46,12 +46,11 @@ class HourglassNet(object):
         csvlogger = CSVLogger(os.path.join(model_path, "csv_train_"+ str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
         modelfile = os.path.join(model_path, 'weights_{epoch:02d}_{loss:.2f}.hdf5')
 
-        checkpoint =  EvalCallBack(model_path)
+        checkpoint =  EvalCallBack(model_path, self.inres, self.outres)
 
         xcallbacks = [csvlogger, checkpoint]
 
         self.model.fit_generator(generator=train_gen, steps_per_epoch=train_dataset.get_dataset_size()//batch_size,
-                                 #validation_data=val_gen, validation_steps= val_dataset.get_dataset_size()//batch_size,
                                  epochs=epochs, callbacks=xcallbacks)
 
     def resume_train(self, batch_size, model_json, model_weights, init_epoch, epochs):
@@ -69,7 +68,7 @@ class HourglassNet(object):
         print model_dir , model_json
         csvlogger = CSVLogger(os.path.join(model_dir, "csv_train_" + str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
 
-        checkpoint = EvalCallBack(model_dir)
+        checkpoint = EvalCallBack(model_dir, self.inres, self.outres)
 
         xcallbacks = [csvlogger, checkpoint]
 
@@ -81,11 +80,6 @@ class HourglassNet(object):
         with open(modeljson) as f :
             self.model = model_from_json(f.read())
         self.model.load_weights(modelfile)
-
-    '''
-    def load_model(self, modelfile):
-            self.model = load_model(modelfile, custom_objects={'euclidean_loss': euclidean_loss})
-    '''
 
     def inference_rgb(self, rgbdata, orgshape, mean=None):
 

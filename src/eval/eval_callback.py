@@ -7,9 +7,10 @@ from eval_heatmap import cal_heatmap_acc
 
 class EvalCallBack(keras.callbacks.Callback):
 
-    def __init__(self, foldpath):
+    def __init__(self, foldpath, inres, outres):
         self.foldpath = foldpath
-
+        self.inres = inres
+        self.outres = outres
 
     def get_folder_path(self):
         return self.foldpath
@@ -17,7 +18,7 @@ class EvalCallBack(keras.callbacks.Callback):
     def run_eval(self, epoch):
         valdata = MPIIDataGen("../../data/mpii/mpii_annotations.json",
                               "../../data/mpii/images",
-                              inres=(256, 256), outres=(64, 64), is_train=False)
+                              inres=self.inres, outres=self.outres, is_train=False)
 
         total_suc, total_fail = 0, 0
         threshold = 0.5

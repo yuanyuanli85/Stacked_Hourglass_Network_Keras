@@ -22,8 +22,13 @@ def render_joints(cvmat, joints, conf_th=0.2):
 
     return cvmat
 
-def main_inference(model_json, model_weights, num_stack, num_class, imgfile, confth):
-    xnet = HourglassNet(num_class, num_stack, (256, 256), (64, 64))
+def main_inference(model_json, model_weights, num_stack, num_class, imgfile, confth, tiny):
+
+    if tiny:
+        xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, num_channels=128, inres=(192, 192), outres=(48, 48))
+    else:
+        xnet = HourglassNet(num_classes=16, num_stacks=args.num_stack, num_channels=256, inres=(256, 256), outres=(64, 64))
+
     xnet.load_model(model_json, model_weights)
 
     out, scale = xnet.inference_file(imgfile)
@@ -46,36 +51,6 @@ def main_inference(model_json, model_weights, num_stack, num_class, imgfile, con
     cv2.waitKey()
 
 
-def main_video(model_json, model_weights, num_stack, num_class, videofile, confth):
-
-    xnet = HourglassNet(num_class, num_stack, (256, 256), (64, 64))
-    xnet.load_model(model_json, model_weights)
-
-    cap = cv2.VideoCapture(videofile)
-    while (cap.isOpened()):
-        ret, frame = cap.read()
-        if ret:
-            rgb = frame[:,:,::-1] # bgr -> rgb
-            out, scale = xnet.inference_rgb(rgb, frame.shape)
-
-            kps = post_process_heatmap(out[0, :, :, :])
-
-            ignore_kps = ['plevis', 'thorax', 'head_top']
-            kp_keys = MPIIDataGen.get_kp_keys()
-            mkps = list()
-            for i, _kp in enumerate(kps):
-                if kp_keys[i] in ignore_kps:
-                    _conf = 0.0
-                else:
-                    _conf = _kp[2]
-                mkps.append((_kp[0] * scale[1] * 4, _kp[1] * scale[0] * 4, _conf))
-
-            framejoints = render_joints(frame, mkps, confth)
-
-            cv2.imshow('frame', framejoints)
-            cv2.waitKey(10)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--gpuID", default=0, type=int, help='gpu id')
@@ -83,17 +58,13 @@ if __name__ == "__main__":
     parser.add_argument("--model_weights",  help='path to store trained model')
     parser.add_argument("--num_stack",  type=int, help='num of stack')
     parser.add_argument("--input_image",  help='input image file')
-    parser.add_argument("--input_video", default='', help='input video file')
     parser.add_argument("--conf_threshold", type=float, default=0.2, help='confidence threshold')
+    parser.add_argument("--tiny", default=False, type=bool, help="tiny network for speed, inres=[192x128], channel=128")
 
     args = parser.parse_args()
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpuID)
 
-    if args.input_image:
-       main_inference(model_json=args.model_json, model_weights=args.model_weights, num_stack=args.num_stack,
-                   num_class=16, imgfile = args.input_image, confth=args.conf_threshold)
-    elif args.input_video:
-        main_video(model_json=args.model_json, model_weights=args.model_weights, num_stack=args.num_stack,
-                   num_class=16, videofile=args.input_video, confth=args.conf_threshold)
+    main_inference(model_json=args.model_json, model_weights=args.model_weights, num_stack=args.num_stack,
+               num_class=16, imgfile = args.input_image, confth=args.conf_threshold, tiny=args.tiny)
