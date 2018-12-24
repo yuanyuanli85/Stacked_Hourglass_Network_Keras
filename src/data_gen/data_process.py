@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
 
+
 def get_transform(center, scale, res, rot=0):
     """
     General image processing functions
@@ -14,21 +15,22 @@ def get_transform(center, scale, res, rot=0):
     t[1, 2] = res[0] * (-float(center[1]) / h + .5)
     t[2, 2] = 1
     if not rot == 0:
-        rot = -rot # To match direction of rotation from cropping
-        rot_mat = np.zeros((3,3))
+        rot = -rot  # To match direction of rotation from cropping
+        rot_mat = np.zeros((3, 3))
         rot_rad = rot * np.pi / 180
-        sn,cs = np.sin(rot_rad), np.cos(rot_rad)
-        rot_mat[0,:2] = [cs, -sn]
-        rot_mat[1,:2] = [sn, cs]
-        rot_mat[2,2] = 1
+        sn, cs = np.sin(rot_rad), np.cos(rot_rad)
+        rot_mat[0, :2] = [cs, -sn]
+        rot_mat[1, :2] = [sn, cs]
+        rot_mat[2, 2] = 1
         # Need to rotate around center
         t_mat = np.eye(3)
-        t_mat[0,2] = -res[1]/2
-        t_mat[1,2] = -res[0]/2
+        t_mat[0, 2] = -res[1] / 2
+        t_mat[1, 2] = -res[0] / 2
         t_inv = t_mat.copy()
-        t_inv[:2,2] *= -1
-        t = np.dot(t_inv,np.dot(rot_mat,np.dot(t_mat,t)))
+        t_inv[:2, 2] *= -1
+        t = np.dot(t_inv, np.dot(rot_mat, np.dot(t_mat, t)))
     return t
+
 
 def transform(pt, center, scale, res, invert=0, rot=0):
     # Transform pixel location to different reference
@@ -39,8 +41,8 @@ def transform(pt, center, scale, res, invert=0, rot=0):
     new_pt = np.dot(t, new_pt)
     return new_pt[:2].astype(int) + 1
 
-def crop(img, center, scale, res, rot=0):
 
+def crop(img, center, scale, res, rot=0):
     # Preprocessing for efficient cropping
     ht, wd = img.shape[0], img.shape[1]
     sf = scale * 200.0 / res[0]
@@ -92,7 +94,7 @@ def normalize(imgdata, color_mean):
     :param imgdata: image in 0 ~ 255
     :return:  image from 0.0 to 1.0
     '''
-    imgdata = imgdata/255.0
+    imgdata = imgdata / 255.0
 
     for i in range(imgdata.shape[-1]):
         imgdata[:, :, i] -= color_mean[i]
@@ -138,15 +140,16 @@ def transform_kp(joints, center, scale, res, rot):
     newjoints = np.copy(joints)
     for i in range(joints.shape[0]):
         if joints[i, 0] > 0 and joints[i, 1] > 0:
-            _x = transform(newjoints[i, 0:2]+1, center=center, scale=scale, res=res, invert=0, rot=rot)
+            _x = transform(newjoints[i, 0:2] + 1, center=center, scale=scale, res=res, invert=0, rot=rot)
             newjoints[i, 0:2] = _x
     return newjoints
+
 
 def generate_gtmap(joints, sigma, outres):
     npart = joints.shape[0]
     gtmap = np.zeros(shape=(outres[0], outres[1], npart), dtype=float)
     for i in range(npart):
-        visibility = joints[i,2]
+        visibility = joints[i, 2]
         if visibility > 0:
-            gtmap[:, :, i] = draw_labelmap(gtmap[:,:,i], joints[i,:], sigma)
+            gtmap[:, :, i] = draw_labelmap(gtmap[:, :, i], joints[i, :], sigma)
     return gtmap

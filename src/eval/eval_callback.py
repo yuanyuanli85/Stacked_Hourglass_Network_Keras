@@ -5,6 +5,7 @@ from time import time
 from mpii_datagen import MPIIDataGen
 from eval_heatmap import cal_heatmap_acc
 
+
 class EvalCallBack(keras.callbacks.Callback):
 
     def __init__(self, foldpath, inres, outres):
@@ -38,7 +39,7 @@ class EvalCallBack(keras.callbacks.Callback):
             total_suc += suc
             total_fail += bad
 
-        acc = total_suc*1.0 / (total_fail + total_suc)
+        acc = total_suc * 1.0 / (total_fail + total_suc)
 
         print 'Eval Accuray ', acc, '@ Epoch ', epoch
 
@@ -48,7 +49,7 @@ class EvalCallBack(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         # This is a walkaround to sovle model.save() issue
         # in which large network can't be saved due to size.
-        
+
         # save model to json
         if epoch == 0:
             jsonfile = os.path.join(self.foldpath, "net_arch.json")
@@ -62,4 +63,3 @@ class EvalCallBack(keras.callbacks.Callback):
         print "Saving model to ", modelName
 
         self.run_eval(epoch)
-

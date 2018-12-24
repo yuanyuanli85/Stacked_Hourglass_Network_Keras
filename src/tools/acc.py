@@ -2,6 +2,7 @@ import argparse
 import matplotlib.pyplot as plt
 import os
 
+
 def get_number(valfile):
     with open(valfile) as xfile:
         lines = xfile.readlines()
@@ -14,15 +15,17 @@ def get_number(valfile):
 
     return scores
 
+
 def main_plot(vallst):
     for valfile in vallst:
         valname = os.path.basename(os.path.dirname(valfile))
-        score   = get_number(valfile)
+        score = get_number(valfile)
         plt.plot(score, label=valname)
 
     plt.title('MPII val score')
     plt.legend()
     plt.show()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -30,4 +33,3 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main_plot(args.val_file)
-

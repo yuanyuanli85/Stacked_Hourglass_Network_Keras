@@ -11,12 +11,12 @@ class MPIIDataGen(object):
 
     def __init__(self, jsonfile, imgpath, inres, outres, is_train):
         self.jsonfile = jsonfile
-        self.imgpath  = imgpath
-        self.inres    = inres
-        self.outres   = outres
+        self.imgpath = imgpath
+        self.inres = inres
+        self.outres = outres
         self.is_train = is_train
-        self.nparts   = 16
-        self.anno     = self._load_image_annotation()
+        self.nparts = 16
+        self.anno = self._load_image_annotation()
 
     def _load_image_annotation(self):
         # load train or val annotation
@@ -52,12 +52,12 @@ class MPIIDataGen(object):
         Output: batch_size * oures  * nparts
         '''
         train_input = np.zeros(shape=(batch_size, self.inres[0], self.inres[1], 3), dtype=np.float)
-        gt_heatmap  = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
-        meta_info   = list()
+        gt_heatmap = np.zeros(shape=(batch_size, self.outres[0], self.outres[1], self.nparts), dtype=np.float)
+        meta_info = list()
 
         if not self.is_train:
             assert (is_shuffle == False), 'shuffle must be off in val model'
-            assert (rot_flag == False),  'rot_flag must be off in val model'
+            assert (rot_flag == False), 'rot_flag must be off in val model'
 
         while True:
             if is_shuffle:
@@ -66,13 +66,13 @@ class MPIIDataGen(object):
             for i, kpanno in enumerate(self.anno):
 
                 _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma, rot_flag, scale_flag, flip_flag)
-                _index = i%batch_size
+                _index = i % batch_size
 
                 train_input[_index, :, :, :] = _imageaug
                 gt_heatmap[_index, :, :, :] = _gthtmap
                 meta_info.append(_meta)
 
-                if i%batch_size == (batch_size -1):
+                if i % batch_size == (batch_size - 1):
                     out_hmaps = []
                     for m in range(num_hgstack):
                         out_hmaps.append(gt_heatmap)
@@ -83,33 +83,31 @@ class MPIIDataGen(object):
                     else:
                         yield train_input, out_hmaps
 
-
-
     def process_image(self, sample_index, kpanno, sigma, rot_flag, scale_flag, flip_flag):
         imagefile = kpanno['img_paths']
         image = scipy.misc.imread(os.path.join(self.imgpath, imagefile))
 
         # get center
-        center =  np.array(kpanno['objpos'])
-        joints =  np.array(kpanno['joint_self'])
-        scale =  kpanno['scale_provided']
+        center = np.array(kpanno['objpos'])
+        joints = np.array(kpanno['joint_self'])
+        scale = kpanno['scale_provided']
 
         # Adjust center/scale slightly to avoid cropping limbs
         if center[0] != -1:
             center[1] = center[1] + 15 * scale
             scale = scale * 1.25
 
-        #filp
-        if flip_flag and random.choice([0,1]):
-           image, joints, center = self.flip(image, joints, center)
+        # filp
+        if flip_flag and random.choice([0, 1]):
+            image, joints, center = self.flip(image, joints, center)
 
         # scale
         if scale_flag:
             scale = scale * np.random.uniform(0.8, 1.2)
 
         # rotate image
-        if rot_flag and random.choice([0,1]):
-            rot = np.random.randint(-1*30, 30)
+        if rot_flag and random.choice([0, 1]):
+            rot = np.random.randint(-1 * 30, 30)
         else:
             rot = 0
 
@@ -121,22 +119,19 @@ class MPIIDataGen(object):
         gtmap = data_process.generate_gtmap(transformedKps, sigma, self.outres)
 
         # meta info
-        metainfo =  { 'sample_index': sample_index, 'center' : center, 'scale' : scale,
-                      'pts' :joints, 'tpts' : transformedKps, 'name' : imagefile}
+        metainfo = {'sample_index': sample_index, 'center': center, 'scale': scale,
+                    'pts': joints, 'tpts': transformedKps, 'name': imagefile}
 
         return cropimg, gtmap, metainfo
-
 
     @classmethod
     def get_kp_keys(cls):
         keys = ['r_ankle', 'r_knee', 'r_hip',
-                'l_hip',  'l_knee', 'l_ankle',
+                'l_hip', 'l_knee', 'l_ankle',
                 'plevis', 'thorax', 'upper_neck', 'head_top',
                 'r_wrist', 'r_elbow', 'r_shoulder',
                 'l_shoulder', 'l_elbow', 'l_wrist']
         return keys
-
-
 
     def flip(self, image, joints, center):
 
@@ -145,29 +140,29 @@ class MPIIDataGen(object):
         joints = np.copy(joints)
 
         matchedParts = (
-            [0,5], #ankle
-            [1,4], #knee
-            [2,3], #hip
-            [10,15], #wrist
-            [11,14], #elbow
-            [12,13]  # shoulder
+            [0, 5],  # ankle
+            [1, 4],  # knee
+            [2, 3],  # hip
+            [10, 15],  # wrist
+            [11, 14],  # elbow
+            [12, 13]  # shoulder
         )
 
         org_height, org_width, channels = image.shape
 
-        #flip image
+        # flip image
         flipimage = cv2.flip(image, flipCode=1)
 
-        #flip each joints
-        joints[:,0] = org_width - joints[:,0]
+        # flip each joints
+        joints[:, 0] = org_width - joints[:, 0]
 
         for i, j in matchedParts:
-            temp = np.copy(joints[i,:])
+            temp = np.copy(joints[i, :])
             joints[i, :] = joints[j, :]
             joints[j, :] = temp
 
         # center
         flip_center = center
-        flip_center[0] =  org_width - center[0]
+        flip_center[0] = org_width - center[0]
 
         return flipimage, joints, flip_center

@@ -6,7 +6,6 @@ import os
 
 
 def run_pckh(model_name, predfile):
-
     detection = loadmat('../../data/mpii/detections.mat')
     det_idxs = detection['RELEASE_img_index']
     debug = 0
@@ -23,11 +22,9 @@ def run_pckh(model_name, predfile):
     pos_gt_src = dict['pos_gt_src']
     headboxes_src = dict['headboxes_src']
 
-
-    #predictions
+    # predictions
     preds = loadmat(predfile)['preds']
     pos_pred_src = transpose(preds, [1, 2, 0])
-
 
     if debug:
         for i in range(len(det_idxs[0])):
@@ -37,7 +34,6 @@ def run_pckh(model_name, predfile):
             oriImg = sio.imread(imagePath)
             pred = pos_pred_src[:, :, i]
             visualize(oriImg, pred, pa)
-
 
     head = np.where(dataset_joints == 'head')[1][0]
     lsho = np.where(dataset_joints == 'lsho')[1][0]
@@ -74,12 +70,23 @@ def run_pckh(model_name, predfile):
     for r in range(len(rng)):
         threshold = rng[r]
         less_than_threshold = np.multiply(scaled_uv_err < threshold, jnt_visible)
-        pckAll[r, :] = np.divide(100.*np.sum(less_than_threshold, axis=1), jnt_count)
+        pckAll[r, :] = np.divide(100. * np.sum(less_than_threshold, axis=1), jnt_count)
 
     name = predfile.split(os.sep)[-1]
     PCKh = np.ma.array(PCKh, mask=False)
     PCKh.mask[6:8] = True
     print("Model,  Head,   Shoulder, Elbow,  Wrist,   Hip ,     Knee  , Ankle ,  Mean")
-    print('{:s}   {:.2f}  {:.2f}     {:.2f}  {:.2f}   {:.2f}   {:.2f}   {:.2f}   {:.2f}'.format(model_name, PCKh[head], 0.5 * (PCKh[lsho] + PCKh[rsho])\
-            , 0.5 * (PCKh[lelb] + PCKh[relb]),0.5 * (PCKh[lwri] + PCKh[rwri]), 0.5 * (PCKh[lhip] + PCKh[rhip]), 0.5 * (PCKh[lkne] + PCKh[rkne]) \
-            , 0.5 * (PCKh[lank] + PCKh[rank]), np.mean(PCKh)))
+    print('{:s}   {:.2f}  {:.2f}     {:.2f}  {:.2f}   {:.2f}   {:.2f}   {:.2f}   {:.2f}'.format(model_name, PCKh[head],
+                                                                                                0.5 * (PCKh[lsho] +
+                                                                                                       PCKh[rsho]) \
+                                                                                                , 0.5 * (PCKh[lelb] +
+                                                                                                         PCKh[relb]),
+                                                                                                0.5 * (PCKh[lwri] +
+                                                                                                       PCKh[rwri]),
+                                                                                                0.5 * (PCKh[lhip] +
+                                                                                                       PCKh[rhip]),
+                                                                                                0.5 * (PCKh[lkne] +
+                                                                                                       PCKh[rkne]) \
+                                                                                                , 0.5 * (PCKh[lank] +
+                                                                                                         PCKh[rank]),
+                                                                                                np.mean(PCKh)))
