@@ -12,7 +12,7 @@ from eval_heatmap import get_predicted_kp_from_htmap
 from hourglass import HourglassNet
 import argparse
 from pckh import run_pckh
-
+import cv2
 
 def get_final_pred_kps(valkps, preheatmap, metainfo, outres):
     for i in range(preheatmap.shape[0]):
@@ -23,7 +23,48 @@ def get_final_pred_kps(valkps, preheatmap, metainfo, outres):
         valkps[sample_index, :, :] = kps[:, 0:2]  # ignore the visibility
 
 
-def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny):
+
+def flip_out_heatmap(flipout):
+
+    # mpii matched parts
+    matchedParts = (
+        [0, 5], [1, 4], [2, 3],
+        [10, 15], [11, 14], [12, 13]
+    )
+
+    outmap = np.zeros(flipout.shape, dtype=np.float)
+
+    # flip all of channels
+    for i in range(flipout.shape[-1]):
+        _map = np.copy(flipout[:, :, i])
+        outmap[:, :, i] = cv2.flip(_map, flipCode=1)
+
+    # exchange right-left channels
+    for pair in matchedParts:
+        tmp = np.copy(outmap[:,  :, pair[0]])
+        outmap[:,  :, pair[0]] = outmap[:, :, pair[1]]
+        outmap[:,  :, pair[1]] = tmp
+
+    return outmap
+
+
+def inference_filpped_image(org_images, net):
+
+    flip_images = np.zeros(shape=org_images.shape)
+    for i in range(flip_images.shape[0]):
+        flip_images[i,:,:,:] = cv2.flip(org_images[i,:,:,:], flipCode=1)
+
+    flip_outputs = net.model.predict(flip_images)
+    flip_outputs = flip_outputs[-1]
+
+    flip_back_outputs =  np.zeros(shape=flip_outputs.shape)
+    for i in range(flip_back_outputs.shape[0]):
+        flip_back_outputs[i, :, :, :] = flip_out_heatmap(flip_outputs[i,:,:,:])
+
+    return flip_back_outputs
+
+
+def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny, flip=False):
     inres = (192, 192) if tiny else (256, 256)
     outres = (48, 48) if tiny else (64, 64)
     num_channles = 128 if tiny else 256
@@ -44,14 +85,21 @@ def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny):
     batch_size = 8
     for _img, _gthmap, _meta in valdata.generator(batch_size, num_stack, sigma=1, is_shuffle=False, with_meta=True):
 
-        count += batch_size
-
         if count > valdata.get_dataset_size():
             break
 
-        out = xnet.model.predict(_img)
+        if flip:
+            flipout = inference_filpped_image(_img, xnet)
+            orgout = xnet.model.predict(_img)[-1]
+            out = (flipout + orgout)/2
+        else:
+            out = xnet.model.predict(_img)
+            out = out[-1]
 
-        get_final_pred_kps(valkps, out[-1], _meta, outres)
+        get_final_pred_kps(valkps, out, _meta, outres)
+
+        count += batch_size
+
 
     scipy.io.savemat(matfile, mdict={'preds': valkps})
 

@@ -18,7 +18,7 @@ def create_hourglass_network(num_classes, num_stacks, num_channels, inres, outre
         outputs.append(head_to_loss)
 
     model = Model(inputs=input, outputs=outputs)
-    rms = RMSprop(lr=5e-4)
+    rms = RMSprop(lr=2.5e-4, )
     model.compile(optimizer=rms, loss=mean_squared_error, metrics=["accuracy"])
 
     return model
@@ -39,6 +39,7 @@ def hourglass_module(bottom, num_classes, num_channels, bottleneck, hgid):
 
 
 def bottleneck_block(bottom, num_out_channels, block_name):
+
     # skip layer
     if K.int_shape(bottom)[-1] == num_out_channels:
         _skip = bottom
@@ -46,16 +47,17 @@ def bottleneck_block(bottom, num_out_channels, block_name):
         _skip = Conv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
                        name=block_name + 'skip')(bottom)
 
+    _x = BatchNormalization()(bottom)
     # residual: 3 conv blocks,  [num_out_channels/2  -> num_out_channels/2 -> num_out_channels]
-    _x = Conv2D(num_out_channels / 2, kernel_size=(1, 1), activation='relu', padding='same',
-                name=block_name + '_conv_1x1_x1')(bottom)
+    _x = Conv2D(num_out_channels // 2, kernel_size=(1, 1), activation='relu', padding='same',
+                name=block_name + '_conv_1x1_x1')(_x)
     _x = BatchNormalization()(_x)
-    _x = Conv2D(num_out_channels / 2, kernel_size=(3, 3), activation='relu', padding='same',
+    _x = Conv2D(num_out_channels // 2, kernel_size=(3, 3), activation='relu', padding='same',
                 name=block_name + '_conv_3x3_x2')(_x)
     _x = BatchNormalization()(_x)
     _x = Conv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
                 name=block_name + '_conv_1x1_x3')(_x)
-    _x = BatchNormalization()(_x)
+
     _x = Add(name=block_name + '_residual')([_skip, _x])
 
     return _x
@@ -69,17 +71,20 @@ def bottleneck_mobile(bottom, num_out_channels, block_name):
         _skip = SeparableConv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
                                 name=block_name + 'skip')(bottom)
 
+    _x = BatchNormalization()(bottom)
+
     # residual: 3 conv blocks,  [num_out_channels/2  -> num_out_channels/2 -> num_out_channels]
     _x = SeparableConv2D(num_out_channels / 2, kernel_size=(1, 1), activation='relu', padding='same',
-                         name=block_name + '_conv_1x1_x1')(bottom)
+                         name=block_name + '_conv_1x1_x1')(_x)
     _x = BatchNormalization()(_x)
     _x = SeparableConv2D(num_out_channels / 2, kernel_size=(3, 3), activation='relu', padding='same',
                          name=block_name + '_conv_3x3_x2')(_x)
     _x = BatchNormalization()(_x)
     _x = SeparableConv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
                          name=block_name + '_conv_1x1_x3')(_x)
-    _x = BatchNormalization()(_x)
+
     _x = Add(name=block_name + '_residual')([_skip, _x])
+    _x = BatchNormalization()(_x)
 
     return _x
 
@@ -91,12 +96,11 @@ def create_front_module(input, num_channels, bottleneck):
 
     _x = Conv2D(64, kernel_size=(7, 7), strides=(2, 2), padding='same', activation='relu', name='front_conv_1x1_x1')(
         input)
-    _x = BatchNormalization()(_x)
 
     _x = bottleneck(_x, num_channels // 2, 'front_residual_x1')
     _x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(_x)
 
-    _x = bottleneck(_x, num_channels // 2, 'front_residual_x2')
+    _x = bottleneck(_x, num_channels, 'front_residual_x2')
     _x = bottleneck(_x, num_channels, 'front_residual_x3')
 
     return _x
