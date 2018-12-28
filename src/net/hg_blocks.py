@@ -3,7 +3,17 @@ from keras.layers import *
 from keras.optimizers import Adam, RMSprop
 from keras.losses import mean_squared_error
 import keras.backend as K
+import math
 
+def kernel_initializer_uniform(shape, dtype=None):
+    assert (len(shape) ==4), 'conv2d shape must be 4 dims ' + shape
+    #kernel_size * kernel_size * input_channles, * output_channels
+    n = 1
+    for i in range(3):
+        n *= shape[i]
+    stdv = 1. / math.sqrt(n)
+    weight = K.random_uniform(shape, -stdv, stdv, dtype=dtype)
+    return weight
 
 def create_hourglass_network(num_classes, num_stacks, num_channels, inres, outres, bottleneck):
     input = Input(shape=(inres[0], inres[1], 3))
@@ -18,7 +28,7 @@ def create_hourglass_network(num_classes, num_stacks, num_channels, inres, outre
         outputs.append(head_to_loss)
 
     model = Model(inputs=input, outputs=outputs)
-    rms = RMSprop(lr=2.5e-4, )
+    rms = RMSprop(lr=2.5e-4 )
     model.compile(optimizer=rms, loss=mean_squared_error, metrics=["accuracy"])
 
     return model
@@ -45,18 +55,18 @@ def bottleneck_block(bottom, num_out_channels, block_name):
         _skip = bottom
     else:
         _skip = Conv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
-                       name=block_name + 'skip')(bottom)
+                       name=block_name + 'skip', kernel_initializer=kernel_initializer_uniform)(bottom)
 
     _x = BatchNormalization()(bottom)
     # residual: 3 conv blocks,  [num_out_channels/2  -> num_out_channels/2 -> num_out_channels]
     _x = Conv2D(num_out_channels // 2, kernel_size=(1, 1), activation='relu', padding='same',
-                name=block_name + '_conv_1x1_x1')(_x)
+                name=block_name + '_conv_1x1_x1', kernel_initializer=kernel_initializer_uniform)(_x)
     _x = BatchNormalization()(_x)
     _x = Conv2D(num_out_channels // 2, kernel_size=(3, 3), activation='relu', padding='same',
-                name=block_name + '_conv_3x3_x2')(_x)
+                name=block_name + '_conv_3x3_x2', kernel_initializer=kernel_initializer_uniform)(_x)
     _x = BatchNormalization()(_x)
     _x = Conv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
-                name=block_name + '_conv_1x1_x3')(_x)
+                name=block_name + '_conv_1x1_x3', kernel_initializer=kernel_initializer_uniform)(_x)
 
     _x = Add(name=block_name + '_residual')([_skip, _x])
 
@@ -174,19 +184,19 @@ def create_right_half_blocks(leftfeatures, bottleneck, hglayer, num_channels):
 
 def create_heads(prelayerfeatures, rf1, num_classes, hgid, num_channels):
     # two head, one head to next stage, one head to intermediate features
-    head = Conv2D(num_channels, kernel_size=(1, 1), activation='relu', padding='same', name=str(hgid) + '_conv_1x1_x1')(
-        rf1)
+    head = Conv2D(num_channels, kernel_size=(1, 1), activation='relu', padding='same',
+                  name=str(hgid) + '_conv_1x1_x1', kernel_initializer=kernel_initializer_uniform)(rf1)
     head = BatchNormalization()(head)
 
     # for head as intermediate supervision, use 'linear' as activation.
     head_parts = Conv2D(num_classes, kernel_size=(1, 1), activation='linear', padding='same',
-                        name=str(hgid) + '_conv_1x1_parts')(head)
+                        name=str(hgid) + '_conv_1x1_parts', kernel_initializer=kernel_initializer_uniform)(head)
 
     # use linear activation
     head = Conv2D(num_channels, kernel_size=(1, 1), activation='linear', padding='same',
-                  name=str(hgid) + '_conv_1x1_x2')(head)
+                  name=str(hgid) + '_conv_1x1_x2', kernel_initializer=kernel_initializer_uniform)(head)
     head_m = Conv2D(num_channels, kernel_size=(1, 1), activation='linear', padding='same',
-                    name=str(hgid) + '_conv_1x1_x3')(head_parts)
+                    name=str(hgid) + '_conv_1x1_x3', kernel_initializer=kernel_initializer_uniform)(head_parts)
 
     head_next_stage = Add()([head, head_m, prelayerfeatures])
     return head_next_stage, head_parts
