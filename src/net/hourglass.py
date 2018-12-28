@@ -15,7 +15,7 @@ import scipy.misc
 from data_process import normalize
 import numpy as np
 from eval_callback import EvalCallBack
-
+from hg_blocks import kernel_initializer_uniform
 
 class HourglassNet(object):
 
@@ -78,8 +78,14 @@ class HourglassNet(object):
                                  initial_epoch=init_epoch, epochs=epochs, callbacks=xcallbacks)
 
     def load_model(self, modeljson, modelfile):
+        #walk around for keras issue to load custom kernel initializer
+        #https://github.com/keras-team/keras/issues/3867
+        class CustomInitializer:
+            def __call__(self, shape, dtype=None):
+                return kernel_initializer_uniform(shape, dtype=dtype)
+
         with open(modeljson) as f:
-            self.model = model_from_json(f.read())
+            self.model = model_from_json(f.read(), custom_objects={'kernel_initializer_uniform':CustomInitializer})
         self.model.load_weights(modelfile)
 
     def inference_rgb(self, rgbdata, orgshape, mean=None):

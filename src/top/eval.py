@@ -22,8 +22,6 @@ def get_final_pred_kps(valkps, preheatmap, metainfo, outres):
         kps = get_predicted_kp_from_htmap(prehmap, meta, outres)
         valkps[sample_index, :, :] = kps[:, 0:2]  # ignore the visibility
 
-
-
 def flip_out_heatmap(flipout):
 
     # mpii matched parts
@@ -82,8 +80,8 @@ def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny, fl
     valkps = np.zeros(shape=(valdata.get_dataset_size(), 16, 2), dtype=np.float)
 
     count = 0
-    batch_size = 8
-    for _img, _gthmap, _meta in valdata.generator(batch_size, num_stack, sigma=1, is_shuffle=False, with_meta=True):
+    batch_size = 1
+    for _img, _meta in valdata.generator_val_data(batch_size, sigma=1):
 
         if count > valdata.get_dataset_size():
             break
@@ -99,7 +97,6 @@ def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny, fl
         get_final_pred_kps(valkps, out, _meta, outres)
 
         count += batch_size
-
 
     scipy.io.savemat(matfile, mdict={'preds': valkps})
 

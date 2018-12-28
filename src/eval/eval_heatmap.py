@@ -6,8 +6,7 @@ import copy
 
 def get_predicted_kp_from_htmap(heatmap, meta, outres):
     # nms to get location
-    kplst = post_process_heatmap(heatmap)
-    kps = np.array(kplst)
+    kps = post_process_heatmap(heatmap)
 
     # use meta information to transform back to original image
     mkps = copy.copy(kps)

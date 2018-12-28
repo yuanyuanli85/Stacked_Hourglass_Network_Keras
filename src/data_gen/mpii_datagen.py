@@ -83,6 +83,23 @@ class MPIIDataGen(object):
                     else:
                         yield train_input, out_hmaps
 
+    def generator_val_data(self, batch_size, sigma=1):
+        train_input = np.zeros(shape=(batch_size, self.inres[0], self.inres[1], 3), dtype=np.float)
+        meta_info = list()
+
+        for i, kpanno in enumerate(self.anno):
+
+            _imageaug, _gthtmap, _meta = self.process_image(i, kpanno, sigma,
+                                                            rot_flag=False, scale_flag=False, flip_flag=False)
+            _index = i % batch_size
+
+            train_input[_index, :, :, :] = _imageaug
+            meta_info.append(_meta)
+
+            if i % batch_size == (batch_size - 1):
+                yield train_input, meta_info
+                meta_info = []
+
     def process_image(self, sample_index, kpanno, sigma, rot_flag, scale_flag, flip_flag):
         imagefile = kpanno['img_paths']
         image = scipy.misc.imread(os.path.join(self.imgpath, imagefile))
