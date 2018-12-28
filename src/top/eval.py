@@ -62,7 +62,7 @@ def inference_filpped_image(org_images, net):
     return flip_back_outputs
 
 
-def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny, flip=False):
+def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny, flip=True):
     inres = (192, 192) if tiny else (256, 256)
     outres = (48, 48) if tiny else (64, 64)
     num_channles = 128 if tiny else 256
@@ -80,7 +80,7 @@ def main_eval(model_json, model_weights, num_stack, num_class, matfile, tiny, fl
     valkps = np.zeros(shape=(valdata.get_dataset_size(), 16, 2), dtype=np.float)
 
     count = 0
-    batch_size = 1
+    batch_size = 6
     for _img, _meta in valdata.generator_val_data(batch_size, sigma=1):
 
         if count > valdata.get_dataset_size():
