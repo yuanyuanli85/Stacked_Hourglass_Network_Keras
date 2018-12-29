@@ -43,6 +43,11 @@ class HourglassNet(object):
         train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=True,
                                             rot_flag=True, scale_flag=True, flip_flag=True)
 
+        val_dataset = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
+                                    inres=self.inres, outres=self.outres, is_train=False)
+        val_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=False,
+                                            rot_flag=False, scale_flag=False, flip_flag=False)
+
         csvlogger = CSVLogger(
             os.path.join(model_path, "csv_train_" + str(datetime.datetime.now().strftime('%H:%M')) + ".csv"))
         modelfile = os.path.join(model_path, 'weights_{epoch:02d}_{loss:.2f}.hdf5')
@@ -51,7 +56,8 @@ class HourglassNet(object):
 
         xcallbacks = [csvlogger, checkpoint]
 
-        self.model.fit_generator(generator=train_gen, steps_per_epoch=train_dataset.get_dataset_size() // batch_size,
+        self.model.fit_generator(generator=train_gen, steps_per_epoch= train_dataset.get_dataset_size() // batch_size,
+                                 validation_data=val_gen, validation_steps=val_dataset.get_dataset_size()//batch_size,
                                  epochs=epochs, callbacks=xcallbacks)
 
     def resume_train(self, batch_size, model_json, model_weights, init_epoch, epochs):
@@ -65,6 +71,11 @@ class HourglassNet(object):
         train_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=True,
                                             rot_flag=True, scale_flag=True, flip_flag=True)
 
+        val_dataset = MPIIDataGen("../../data/mpii/mpii_annotations.json", "../../data/mpii/images",
+                                    inres=self.inres, outres=self.outres, is_train=False)
+        val_gen = train_dataset.generator(batch_size, self.num_stacks, sigma=1, is_shuffle=False,
+                                            rot_flag=False, scale_flag=False, flip_flag=False)
+
         model_dir = os.path.dirname(os.path.abspath(model_json))
         print model_dir, model_json
         csvlogger = CSVLogger(
@@ -75,6 +86,7 @@ class HourglassNet(object):
         xcallbacks = [csvlogger, checkpoint]
 
         self.model.fit_generator(generator=train_gen, steps_per_epoch=train_dataset.get_dataset_size() // batch_size,
+                                 validation_data=val_gen, validation_steps=val_dataset.get_dataset_size() // batch_size,
                                  initial_epoch=init_epoch, epochs=epochs, callbacks=xcallbacks)
 
     def load_model(self, modeljson, modelfile):
