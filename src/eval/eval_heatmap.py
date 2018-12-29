@@ -56,3 +56,11 @@ def cal_heatmap_acc(prehmap, metainfo, threshold):
         sum_fail += bad
 
     return sum_good, sum_fail
+
+def get_final_pred_kps(valkps, preheatmap, metainfo, outres):
+    for i in range(preheatmap.shape[0]):
+        prehmap = preheatmap[i, :, :, :]
+        meta = metainfo[i]
+        sample_index = meta['sample_index']
+        kps = get_predicted_kp_from_htmap(prehmap, meta, outres)
+        valkps[sample_index, :, :] = kps[:, 0:2]  # ignore the visibility

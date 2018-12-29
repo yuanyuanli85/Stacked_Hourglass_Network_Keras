@@ -3,8 +3,10 @@ import os
 import datetime
 from time import time
 from mpii_datagen import MPIIDataGen
-from eval_heatmap import cal_heatmap_acc
-
+from eval_heatmap import cal_heatmap_acc, get_final_pred_kps
+import numpy as np
+import scipy.io
+from pckh import run_pckh
 
 class EvalCallBack(keras.callbacks.Callback):
 
@@ -26,7 +28,10 @@ class EvalCallBack(keras.callbacks.Callback):
 
         count = 0
         batch_size = 8
-        for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=2, is_shuffle=False, with_meta=True):
+
+        valkps = np.zeros(shape=(valdata.get_dataset_size(), 16, 2), dtype=np.float)
+
+        for _img, _gthmap, _meta in valdata.generator(batch_size, 8, sigma=1, is_shuffle=False, with_meta=True):
 
             count += batch_size
             if count > valdata.get_dataset_size():
@@ -36,15 +41,22 @@ class EvalCallBack(keras.callbacks.Callback):
 
             suc, bad = cal_heatmap_acc(out[-1], _meta, threshold)
 
+            get_final_pred_kps(valkps, out[-1], _meta, self.outres)
+
             total_suc += suc
             total_fail += bad
 
         acc = total_suc * 1.0 / (total_fail + total_suc)
-
         print 'Eval Accuray ', acc, '@ Epoch ', epoch
-
         with open(os.path.join(self.get_folder_path(), 'val.txt'), 'a+') as xfile:
             xfile.write('Epoch ' + str(epoch) + ':' + str(acc) + '\n')
+
+        # save to matfile and do pckh eval
+        matfile = os.path.join(self.foldpath, "preds_epoch{}.mat".format(epoch))
+        scipy.io.savemat(matfile, mdict={'preds': valkps})
+        evalstr = run_pckh('Epoch:'+str(epoch), matfile)
+        with open(os.path.join(self.get_folder_path(), 'val.txt'), 'a+') as xfile:
+            xfile.write(evalstr+ '\n')
 
     def on_epoch_end(self, epoch, logs=None):
         # This is a walkaround to sovle model.save() issue

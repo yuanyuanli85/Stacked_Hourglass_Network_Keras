@@ -8,19 +8,11 @@ import os
 import numpy as np
 import scipy.misc
 from mpii_datagen import MPIIDataGen
-from eval_heatmap import get_predicted_kp_from_htmap
 from hourglass import HourglassNet
 import argparse
 from pckh import run_pckh
 import cv2
-
-def get_final_pred_kps(valkps, preheatmap, metainfo, outres):
-    for i in range(preheatmap.shape[0]):
-        prehmap = preheatmap[i, :, :, :]
-        meta = metainfo[i]
-        sample_index = meta['sample_index']
-        kps = get_predicted_kp_from_htmap(prehmap, meta, outres)
-        valkps[sample_index, :, :] = kps[:, 0:2]  # ignore the visibility
+from eval_heatmap import get_final_pred_kps
 
 def flip_out_heatmap(flipout):
 

@@ -4,7 +4,6 @@ import skimage.io as sio
 import numpy as np
 import os
 
-
 def run_pckh(model_name, predfile):
     detection = loadmat('../../data/mpii/detections.mat')
     det_idxs = detection['RELEASE_img_index']
@@ -76,17 +75,15 @@ def run_pckh(model_name, predfile):
     PCKh = np.ma.array(PCKh, mask=False)
     PCKh.mask[6:8] = True
     print("Model,  Head,   Shoulder, Elbow,  Wrist,   Hip ,     Knee  , Ankle ,  Mean")
-    print('{:s}   {:.2f}  {:.2f}     {:.2f}  {:.2f}   {:.2f}   {:.2f}   {:.2f}   {:.2f}'.format(model_name, PCKh[head],
-                                                                                                0.5 * (PCKh[lsho] +
-                                                                                                       PCKh[rsho]) \
-                                                                                                , 0.5 * (PCKh[lelb] +
-                                                                                                         PCKh[relb]),
-                                                                                                0.5 * (PCKh[lwri] +
-                                                                                                       PCKh[rwri]),
-                                                                                                0.5 * (PCKh[lhip] +
-                                                                                                       PCKh[rhip]),
-                                                                                                0.5 * (PCKh[lkne] +
-                                                                                                       PCKh[rkne]) \
-                                                                                                , 0.5 * (PCKh[lank] +
-                                                                                                         PCKh[rank]),
-                                                                                                np.mean(PCKh)))
+    print('{:s}   {:.2f}  {:.2f}     {:.2f}  {:.2f}   {:.2f}   {:.2f}   {:.2f}   {:.2f}'.
+          format(model_name, PCKh[head], 0.5 * (PCKh[lsho] + PCKh[rsho]), 0.5 * (PCKh[lelb] + PCKh[relb]),
+                  0.5 * (PCKh[lwri] + PCKh[rwri]), 0.5 * (PCKh[lhip] +  PCKh[rhip]),
+                  0.5 * (PCKh[lkne] +  PCKh[rkne]), 0.5 * (PCKh[lank] + PCKh[rank]),
+                  np.mean(PCKh)))
+    mstr = '{:s}  Head{:.2f}  Shoulder{:.2f}  Elbow{:.2f}  Wrist{:.2f}  Hip{:.2f} Knee{:.2f} Ankle{:.2f}  Mean{:.2f}'.\
+          format(model_name, PCKh[head], 0.5 * (PCKh[lsho] + PCKh[rsho]), 0.5 * (PCKh[lelb] + PCKh[relb]),
+                  0.5 * (PCKh[lwri] + PCKh[rwri]), 0.5 * (PCKh[lhip] +  PCKh[rhip]),
+                  0.5 * (PCKh[lkne] + PCKh[rkne]), 0.5 * (PCKh[lank] + PCKh[rank]),
+                  np.mean(PCKh))
+
+    return mstr
