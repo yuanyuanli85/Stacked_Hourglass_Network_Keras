@@ -104,8 +104,8 @@ def create_front_module(input, num_channels, bottleneck):
     # 1 7x7 conv + maxpooling
     # 3 residual block
 
-    _x = Conv2D(64, kernel_size=(7, 7), strides=(2, 2), padding='same', activation='relu', name='front_conv_1x1_x1')(
-        input)
+    _x = Conv2D(64, kernel_size=(7, 7), strides=(2, 2), padding='same', activation='relu',
+                name='front_conv_1x1_x1', kernel_initializer=kernel_initializer_uniform)(input)
 
     _x = bottleneck(_x, num_channels // 2, 'front_residual_x1')
     _x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(_x)
